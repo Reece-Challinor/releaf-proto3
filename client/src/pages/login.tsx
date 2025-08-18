@@ -5,6 +5,12 @@ import { SSOButtons } from "@/components/SSOButtons";
 import { FormStack, FormField } from "@/components/FormStack";
 import { Button } from "@/components/Button";
 
+/**
+ * RELEAF Demo Login Page
+ * Prototype for investor demos - shows authentication flow mockup
+ * No real authentication performed - for demonstration only
+ * SSO buttons are visual only in this demo
+ */
 export default function Login() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [email, setEmail] = useState("");

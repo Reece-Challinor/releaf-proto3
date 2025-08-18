@@ -1,8 +1,17 @@
-# RELEAF
+# RELEAF (Replit)
 
-## Overview
+**Tagline:** Less red tape. More wild places.  
+**What this is:** A small, clean prototype that shows how a hunter can pick a state, choose a license, "run automation," see a digital license card, and click through to a **Stripe Checkout (test mode)**. It's built for quick investor demos and user tests. Not production.
 
-RELEAF is a regulatory automation platform designed to streamline environmental compliance processes with the tagline "Less red tape. More wild places." The application provides automated tools for processing permits, managing compliance requirements, and navigating state-specific regulations across Texas, Colorado, and Arkansas. Built as a modern web application, it features a clean, mobile-first interface with a retro-modern outdoor aesthetic that emphasizes usability and environmental themes.
+## What you can demo in 60 seconds
+
+1. Pick **Texas / Colorado / Arkansas** and a license preset
+2. Toggle **Autofill Profile** (mock data)
+3. Hit **Run Automation** → watch a 7-step timeline animate
+4. A **digital license card** appears (mock ID + QR)
+5. Click **Proceed to Checkout** → lands on **Stripe test** page
+
+Use `?demo=1` in the URL to autoplay the whole flow for recordings.
 
 ## Recent Changes (Version 1.5 - January 2025)
 
@@ -28,117 +37,126 @@ RELEAF is a regulatory automation platform designed to streamline environmental 
 Preferred communication style: Simple, everyday language.
 Code organization: Minimal files, consolidated components where possible.
 
-## System Architecture
+## Tech at a glance
 
-### Frontend Architecture
-- **Framework**: React with TypeScript using Vite as the build tool
-- **UI Libraries**: Dual approach combining Chakra UI for accessibility-ready components and Radix UI primitives with Tailwind CSS for styling
-- **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack Query for server state management and caching
-- **Styling**: Tailwind CSS with custom CSS variables for theming, PostCSS for processing
+* **Frontend:** React + TypeScript (Vite). UI = **Chakra UI + Tailwind** (mobile-first)
+* **Icons & Motion:** lucide-react icons, Framer Motion micro-interactions
+* **Backend:** Node/Express (TypeScript)
+* **DB:** Postgres (Replit SQL)
+* **Payments:** Stripe Checkout (test mode)
+* **State of things:** This is a **demo**—no real state integrations, no real PII
 
-### Component Design System
-- **Design Tokens**: Custom color palette with forest/nature themes (forest, olive, moss, sage, sand, bone)
-- **Typography**: System fonts with serif display fonts for headings
-- **Component Library**: Extensive set of reusable UI components built on Radix UI primitives
-- **Theme System**: CSS custom properties with consistent design tokens for colors, spacing, and typography
+## Quick start (on Replit)
 
-### Backend Architecture
-- **Server Framework**: Express.js with TypeScript
-- **Database ORM**: Drizzle with PostgreSQL as the target database
-- **Storage Interface**: Abstracted storage layer with in-memory implementation for development
-- **API Design**: RESTful API with `/api` prefix for all endpoints
+1. **Fork / open** the project in Replit
+2. **Add Secrets** (left sidebar → "Secrets"):
+   * `DATABASE_URL` = your Replit Postgres URL
+   * `STRIPE_SECRET_KEY` = `sk_test_...`
+   * `STRIPE_PUBLISHABLE_KEY` = `pk_test_...`
+3. **Install** (Replit usually runs `npm i` automatically)
+4. **Run dev**: `npm run dev` - This starts **web (Vite)** and **API (Express)** together
+5. Open the web URL. You should see **RELEAF** with the demo controls
 
-### Data Storage Solutions
-- **Database**: PostgreSQL configured through Drizzle ORM
-- **Schema Management**: Centralized schema definitions in shared directory
-- **Migrations**: Drizzle migrations stored in `/migrations` directory
-- **Development Storage**: In-memory storage implementation for rapid prototyping
+**Health checks**
+* API: visit `/api/health` → should return `{ ok: true, db: true }`
+* Click **Run Automation** → the log should fill and a wallet card should appear
 
-### Authentication and Authorization
-- **Session Management**: Express sessions with PostgreSQL session store (connect-pg-simple)
-- **User Schema**: Basic user model with username/password authentication
-- **Security**: Prepared for session-based authentication with secure cookie handling
+## Brand + design system (locked in)
 
-### Application Features
-- **State Selection**: Multi-state support (TX, CO, AR) with segmented control interface
-- **Automation Demo**: Interactive automation runner with real-time activity logging
-- **Compliance Dashboard**: Overview of environmental impact, safety standards, and documentation status
-- **Activity Tracking**: Real-time logging system for automation processes and permit updates
+* **Palette**
+  * `forest #2F3E2A`, `olive #4E5F34`, `moss #6E7F4F`
+  * `sage #B7C3A3`, `sand #EDE9DB`, `bone #F7F5EE`
+* **Type**
+  * Headings: **Lora** (serif, display)
+  * Body/UI: **Inter Variable** (system fallback ok)
+* **Components (shared look)**
+  * Rounded-2xl **cards** with soft shadows
+  * **Pill** chips (olive border)
+  * **Choice buttons** (big, tappable, selected ring)
+  * **Stepper dots** (3–6 steps)
+  * **Inputs** with olive focus ring, roomy spacing
+* **Motion**
+  * Small fade/slide on card mount; tiny scale on selection
+* **Vibe**
+  * Retro-modern outdoors (WPA/Orvis feel), clean and quiet
+  * Conversational, step-by-step screens (chat-like pacing)
 
-## Component Architecture
+> All of this is set in `src/ui/theme` + Tailwind tokens and reused components. Every new screen should use these pieces.
 
-### Core Brand Components
-- **AppShell**: Main layout wrapper with consistent header and navigation
-- **HeroWave**: SVG wave decoration for vintage landscape aesthetic  
-- **StepperDots**: Progress indicator with animated dots for multi-step flows
-- **ChoiceButton**: Selection cards with icons and checkmarks for permit/option selection
-- **SSOButtons**: Social sign-on buttons for Facebook, Google, Apple, Email
-- **FormStack & FormField**: Consistent form layout and input styling
-- **Button**: Core button component with primary, secondary, outline, ghost variants
-- **Pill**: Compact status indicator with active/inactive states
-- **SegmentedControl**: Multi-option selector for state selection
+## API (demo only)
 
-### Page Components
-- **Home**: Landing page with hero section, brand examples, state selector, automation demo
-- **Login**: Authentication flow with SSO options and email/password form
-- **Permits**: Permit type selection with icon cards and progress stepper
-- **Calendar**: Date/time booking interface for site visits
+### `GET /api/health`
+* Returns `{ ok: true, db: boolean }`
 
-## API Endpoints
+### `POST /api/automation`
+* **Body**
+  ```json
+  { "state": "TX", "license": "TX-HUNT-RES", "autofill": true, "profile": { /* optional */ } }
+  ```
+* **Response**
+  ```json
+  { "ok": true, "jobId": "job_xxx", "attemptId": 123, "steps": [ { "k":"open", "label":"Opening..." }, ... ] }
+  ```
 
-All API routes are prefixed with `/api` for consistency:
+### `POST /api/automation/:attemptId/complete`
+* Marks the attempt as `completed`
 
-- `GET /api/health` - Health check endpoint for monitoring
-- `GET /api/regulations/:state` - Returns regulatory info for TX, CO, AR
-- `GET /api/permits` - Lists available permit types with document requirements  
-- `GET /api/automation/status` - Returns automation service status
+### `POST /api/checkout` *(Stripe test mode)*
+* **Body**
+  ```json
+  { "state": "TX", "license": "TX-HUNT-RES" }
+  ```
+* **Response**
+  ```json
+  { "ok": true, "id": "cs_test_...", "url": "https://checkout.stripe.com/..." }
+  ```
+* The client redirects you to the hosted Checkout page
 
-## Configuration Files
+## Database
 
-### Vite Configuration
-- React plugin for JSX transformation
-- Replit integration plugins
-- Path aliases for clean imports (@, @/components, @/ui, etc.)
-- Server configuration on port 5000
+**Table: `license_attempts`**
+```sql
+create table if not exists license_attempts (
+  id serial primary key,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  state_code text not null,
+  license_id text not null,
+  status text not null default 'started' -- started|completed|failed
+);
+```
+Created automatically on server boot. Used to record demo attempts.
 
-### Tailwind Configuration  
-- Custom color tokens: forest, olive, moss, sage, sand, bone, charcoal
-- Custom fonts: Inter (UI), Lora (Display)
-- Custom border radius: re-card, re-pill
-- Custom shadows: re-card
-- Typography plugin for prose styling
+## Stripe test details
 
-### TypeScript Configuration
-- Strict type checking enabled
-- Path mappings for module resolution
-- JSX preserve for Vite handling
+* Use **Stripe test keys** only
+* Test card: `4242 4242 4242 4242` (any future date, any CVC, any ZIP)
+* Success: you'll hit `/checkout/success` with a `session_id`
+* This prototype **does not** fulfill or issue real licenses
 
-### PostCSS Configuration
-- Tailwind CSS processing
-- Autoprefixer for browser compatibility
+## Demo tips
 
-## External Dependencies
+* Add `?demo=1` to autoplay the core flow (great for screen recordings)
+* We emit lightweight analytics to `window.dataLayer` for Maze tagging:
+  * `state_selected`, `license_selected`, `automation_started`, `automation_completed`, `checkout_click`
 
-### Core Libraries
-- **React 18**: UI framework with TypeScript support
-- **Wouter**: Lightweight routing library
-- **Express**: Backend server framework
-- **Drizzle ORM**: TypeScript-first database ORM
+## Roadmap (prototype → MVP)
 
-### UI Libraries  
-- **Radix UI**: Accessible component primitives (30+ components installed)
-- **Lucide React**: Icon library for UI elements
-- **Tailwind CSS**: Utility-first CSS framework
-- **Class Variance Authority**: Component variant management
+* **Prototype now:** click-through + Stripe test
+* **MVP:** agent-of-record posture, proper remittance, human-in-the-loop for brittle steps, state-by-state playbooks on Cloud Run (GCP)
+* **Later:** wallet pass, guide/outfitter accounts, notifications, zone maps
 
-### Data Management
-- **TanStack Query**: Server state and caching
-- **React Hook Form**: Form state management
-- **Zod**: Schema validation
+## Troubleshooting
 
-### Development Tools
-- **Vite**: Build tool and dev server
-- **TypeScript**: Type safety across stack
-- **PostCSS**: CSS processing pipeline
-- **Replit Plugins**: Development environment integration
+* **CORS**: if API calls fail locally, confirm Vite proxy `/api → http://localhost:3001`
+* **DB false in `/api/health`**: check `DATABASE_URL` secret
+* **Stripe errors**: set both `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY`
+* **Ports**: Vite uses 5173 by default; API 3001. Replit handles routing for the web preview
+
+## Safety + compliance notes
+
+* This is a **demo**. No real licensing is performed here
+* Do **not** load real PII. Use mock data only
+* Production will run as/with authorized **state agents** and follow pricing and remittance rules
+
+**Questions or edits?** Keep language simple, ship small changes, and stay close to the brand tokens and shared components above.

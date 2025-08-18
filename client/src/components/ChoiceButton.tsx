@@ -3,8 +3,9 @@ import { Check } from "lucide-react";
 
 /**
  * ChoiceButton Component - Selection card with icon and checkmark
- * Used for permit selection and other multi-choice interfaces
- * Features vintage outdoor styling with nature-themed colors
+ * Demo component for investor presentations
+ * Used for license/permit selection in the prototype flow
+ * Features vintage outdoor styling with nature-themed colors (WPA/Orvis feel)
  */
 interface ChoiceButtonProps {
   children: ReactNode;

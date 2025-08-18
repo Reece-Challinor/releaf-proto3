@@ -6,9 +6,15 @@ import { Button } from "@/components/Button";
 import { StepperDots } from "@/components/StepperDots";
 import { Trees, Mountain, Fish, Tent } from "lucide-react";
 
+/**
+ * RELEAF Demo Permit Selection Page
+ * Prototype for investor demos - shows license type selection flow
+ * This is mock data for demonstration purposes only
+ */
 export default function Permits() {
   const [selectedPermit, setSelectedPermit] = useState<string | null>(null);
 
+  // Mock permit/license types for demo
   const permits = [
     {
       id: "timber",

@@ -5,10 +5,17 @@ import { Button } from "@/components/Button";
 import { StepperDots } from "@/components/StepperDots";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+/**
+ * RELEAF Demo Calendar Booking Page
+ * Prototype for investor demos - shows appointment scheduling flow
+ * Mock calendar for demonstration - no real bookings made
+ * Part of the hunting license application flow demo
+ */
 export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
 
+  // Mock time slots for demo purposes
   const timeSlots = [
     "9:00 AM", "10:00 AM", "11:00 AM", 
     "2:00 PM", "3:00 PM", "4:00 PM"

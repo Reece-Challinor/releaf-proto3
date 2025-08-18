@@ -3,7 +3,9 @@ import { Pill } from "@/components/Pill";
 
 /**
  * AppShell Component - Main layout wrapper with RELEAF branding
- * Provides consistent header with navigation pills across all pages
+ * Demo prototype shell for investor presentations
+ * Provides consistent header with navigation pills across all demo pages
+ * Part of the retro-modern outdoor design system (WPA/Orvis feel)
  */
 interface AppShellProps {
   children: ReactNode;

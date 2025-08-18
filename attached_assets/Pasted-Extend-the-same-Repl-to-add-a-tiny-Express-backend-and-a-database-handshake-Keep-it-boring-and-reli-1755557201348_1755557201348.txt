@@ -1,0 +1,47 @@
+Extend the same Repl to add a tiny Express backend and a database handshake. Keep it boring and reliable.
+
+1) Backend scaffold:
+   - Create a /server folder (TypeScript).
+   - Install: express cors morgan pg
+   - Dev tooling: ts-node-dev concurrently
+   - tsconfig.json adjustments for server (commonjs, esModuleInterop true).
+   - Create server/src/index.ts:
+       • Read PORT (default 3001)
+       • GET /api/health → { ok: true, db: <boolean> }
+       • (DB check implemented in step 3)
+       • Use CORS for Vite dev origin; use morgan('tiny') logs
+
+2) Monorepo scripts (root package.json):
+   - "server": "ts-node-dev --respawn --transpile-only server/src/index.ts"
+   - "web": "vite"
+   - "dev": "concurrently -k -n WEB,API \"npm:web\" \"npm:server\""
+
+3) Database handshake (Replit SQL/Postgres):
+   - Add a SQL database to the app using Replit’s built-in option (Agent can provision it).
+   - Expose a connection string env var DATABASE_URL (Postgres URI).
+   - In server/src/db.ts:
+       • import { Pool } from 'pg'
+       • const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+       • export async function pingDb() { try { await pool.query('select 1'); return true } catch { return false } }
+   - In /api/health, call pingDb() and include db:true/false in the JSON.
+
+4) Vite dev proxy:
+   - In vite.config.ts, set server.proxy['/api'] = 'http://localhost:3001'
+   - Ensure Vite dev binds to 0.0.0.0 and respects PORT.
+
+5) Front-end wire-up:
+   - In src/pages/Home.tsx (or App.tsx), make the [Run Automation] button call fetch('/api/health').
+   - Show the response in the log box:
+       • “<timestamp> • API OK:true • DB:<true|false>”
+   - Keep UI minimal; use Chakra’s Button and Card primitives with Tailwind utilities.
+
+6) Run & verify:
+   - Run: npm run dev
+   - Confirm both WEB and API start, /api/health returns JSON, and the log updates when clicking.
+   - Print the web URL.
+
+When done, summarize:
+- New packages and scripts
+- New files and code snippets created
+- The /api/health response sample
+- Any cautions for Replit (e.g., saving env vars)

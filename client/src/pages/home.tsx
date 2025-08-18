@@ -8,6 +8,12 @@ import { Pill } from "@/components/Pill";
 import { Button } from "@/components/Button";
 import { ChoiceButton } from "@/components/ChoiceButton";
 
+/**
+ * RELEAF Demo Home Page
+ * Prototype for investor demos and user testing - NOT production
+ * Shows state selection, automation demo, and navigation to other screens
+ * No real licensing operations - mock data only
+ */
 export default function Home() {
   const [selectedState, setSelectedState] = useState("TX");
   const [isRunning, setIsRunning] = useState(false);

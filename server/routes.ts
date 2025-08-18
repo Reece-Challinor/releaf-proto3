@@ -3,13 +3,15 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 /**
- * Register all API routes for the RELEAF application
+ * RELEAF Demo API Routes
+ * This is a prototype for investor demos and user testing - NOT production
  * All routes are prefixed with /api for consistency
+ * No real licensing is performed - mock data only
  */
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for monitoring
+  // Health check endpoint for demo monitoring
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "RELEAF API", timestamp: new Date().toISOString() });
+    res.json({ status: "ok", service: "RELEAF Demo API", timestamp: new Date().toISOString() });
   });
 
   // State regulations endpoint - returns regulatory info for selected state
