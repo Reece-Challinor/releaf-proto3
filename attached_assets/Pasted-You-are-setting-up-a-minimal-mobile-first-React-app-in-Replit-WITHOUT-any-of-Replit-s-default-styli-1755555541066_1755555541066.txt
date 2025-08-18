@@ -1,0 +1,58 @@
+You are setting up a minimal, mobile-first React app in Replit WITHOUT any of Replit’s default styling.
+
+Requirements:
+1) Use the official Replit Vite + React template (TypeScript). Name the Repl: releaf-proto.
+   - If you need a template reference, use Replit’s Vite/React starter from the Templates gallery.
+
+2) Install and configure:
+   - Tailwind CSS (with PostCSS + Autoprefixer). Include a base Tailwind reset and mobile-first defaults.
+   - Chakra UI (stable) for a11y-ready primitives + layout.
+     Install: @chakra-ui/react @emotion/react @emotion/styled framer-motion
+   - Icons: lucide-react
+   - Router: react-router-dom
+   - Type utilities: zod (future-safe), not used yet.
+
+3) Wire Chakra:
+   - Create src/ui/ChakraProvider.tsx that exports <ChakraProvider> with a minimal custom theme:
+     - fonts: system defaults, sizes tuned for mobile
+     - colors: emerald/olive accents (no neon)
+     - global body bg: neutral (zinc-50 equivalent)
+   - Wrap <App/> with ChakraProvider in main.tsx.
+
+4) Configure Tailwind:
+   - tailwind.config.{js,ts}: content matches Vite React TS structure (src/**/*.{ts,tsx}).
+   - src/index.css: @tailwind base; @tailwind components; @tailwind utilities;
+   - Add a tiny utility class set (rounded-2xl, shadows) via Tailwind presets if convenient.
+
+5) Vite server config:
+   - Ensure dev server binds to 0.0.0.0 and respects process.env.PORT if present.
+   - Add `server.proxy` placeholder for `/api` → `http://localhost:3001` (used in a later prompt).
+
+6) Base UI (mobile-first):
+   - Create src/components/Pill.tsx (rounded label).
+   - Create a simple header:
+     Title: RELEAF
+     Tagline: “Less red tape. More wild places.”
+     Right side: <Pill>Investor Mode</Pill> <Pill>Demo</Pill>
+   - Home route (/) shows:
+     - A “Select State” segmented control with TX, CO, AR (no logic yet).
+     - A primary card titled “Automation Demo” with:
+       • A button [Run Automation] (no action yet)
+       • A small log box with “No activity yet.”
+     - Typography & spacing: clean, airy, mobile-first. No Replit styling.
+
+7) Packages and scripts:
+   - Add scripts:
+     "dev": "vite",
+     "build": "vite build",
+     "preview": "vite preview --host --port ${PORT:-4173}"
+
+8) Verify:
+   - Start dev server and confirm the header + demo card render correctly.
+   - Output the local URL and confirm mobile responsive layout.
+
+When done, summarize:
+- Commands you ran
+- Files you created/edited
+- The dev URL
+- Any instructions to continue
