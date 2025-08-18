@@ -1,0 +1,166 @@
+Lock in RELEAF’s brand/theme system so every screen inherits a unified retro-modern outdoor style, as seen in the provided screenshots.
+
+1) Packages & setup
+   - Ensure these are installed (add if missing):
+     @chakra-ui/react @emotion/react @emotion/styled framer-motion
+     lucide-react
+     tailwindcss postcss autoprefixer
+     @fontsource-variable/inter @fontsource-lora
+   - Keep Vite+React+TS + Tailwind from Prompt #1.
+
+2) Create brand tokens
+   - File: src/ui/theme/tokens.ts
+     export const tokens = {
+       colors: {
+         forest: "#2F3E2A",
+         olive:  "#4E5F34",
+         moss:   "#6E7F4F",
+         sage:   "#B7C3A3",
+         sand:   "#EDE9DB",
+         bone:   "#F7F5EE",
+         ink:    "#0F172A",
+         charcoal:"#1F2937",
+         gray600:"#475569",
+         gray300:"#CBD5E1"
+       },
+       radii: { card: "16px", pill: "999px" },
+       shadows: { card: "0 10px 24px rgba(20,25,19,0.08)" },
+       fonts: {
+         display: "'Lora', serif",
+         ui: "'Inter Variable', system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+       }
+     };
+
+3) Extend Chakra theme
+   - File: src/ui/theme/index.ts
+     import { extendTheme } from "@chakra-ui/react";
+     import { tokens } from "./tokens";
+     export const theme = extendTheme({
+       fonts: { heading: tokens.fonts.display, body: tokens.fonts.ui },
+       colors: {
+         brand: {
+           900: tokens.colors.forest,
+           800: tokens.colors.olive,
+           700: tokens.colors.moss,
+           400: tokens.colors.sage,
+           200: tokens.colors.sand,
+           100: tokens.colors.bone
+         }
+       },
+       components: {
+         Button: {
+           baseStyle: { borderRadius: "12px", fontWeight: 600 },
+           variants: {
+             solid:   { bg: "brand.800", color: "white", _hover:{ bg:"brand.900" } },
+             outline: { borderColor:"brand.700", color:"brand.800", _hover:{ bg:"brand.100" } },
+             ghost:   { color:"brand.800", _hover:{ bg:"brand.100" } }
+           },
+           defaultProps:{ colorScheme:"brand" }
+         },
+         Input: {
+           baseStyle: { field:{ borderRadius: "12px" } },
+           variants: {
+             outline: {
+               field: {
+                 borderColor: "brand.400",
+                 _focusWithin:{ borderColor:"brand.800", boxShadow:"0 0 0 3px rgba(78,95,52,0.25)" }
+               }
+             }
+           }
+         },
+         Card: {
+           baseStyle:{ container:{ borderRadius:"16px", boxShadow: "sm", bg:"white" } }
+         },
+         Badge:{ baseStyle:{ borderRadius: "8px" } }
+       },
+       styles:{ global:{
+         "html,body":{ background: tokens.colors.bone, color: tokens.colors.ink },
+         "*::selection":{ background: tokens.colors.sage }
+       }}
+     });
+
+4) Wire provider
+   - Update src/ui/ChakraProvider.tsx to import and use this theme.
+   - Ensure main.tsx wraps <App/> with <ChakraProvider theme={theme}>.
+
+5) Tailwind bridge (utilities that match brand)
+   - tailwind.config.ts → theme.extend:
+       colors: {
+         forest:"#2F3E2A", olive:"#4E5F34", moss:"#6E7F4F",
+         sage:"#B7C3A3", sand:"#EDE9DB", bone:"#F7F5EE",
+         charcoal:"#1F2937"
+       },
+       borderRadius: { 're-card': '16px', 're-pill': '999px' },
+       boxShadow: { 're-card': '0 10px 24px rgba(20,25,19,0.08)' }
+   - src/index.css:
+       @tailwind base; @tailwind components; @tailwind utilities;
+       :root { --re-grad: radial-gradient(120% 120% at 50% 0%, #F7F5EE 40%, #EDE9DB 100%); }
+       body { background: var(--re-grad); }
+       .re-card { @apply rounded-re-card shadow-re-card border border-sage/40 bg-white; }
+       .re-pill { @apply rounded-re-pill border border-olive/30 bg-white; }
+
+6) Brand header + wave/illustration slot
+   - Create src/ui/AppShell.tsx:
+     - Sticky top header, height ~64px, bg “transparent”.
+     - Left: RELEAF wordmark (temp text); Right: small Pills “Investor Mode”, “Demo”.
+   - Create src/ui/HeroWave.tsx: a simple SVG wave divider (top image mask).
+   - In Home page, add a Hero section with:
+     - Background slot for a vintage landscape illustration (placeholder: src/assets/hero.jpg).
+     - Overlay: subtle vignette (linear-gradient black at 5% opacity).
+     - Place <HeroWave/> at the bottom of the image.
+
+7) Base components that match screenshots
+   - src/components/Pill.tsx: small rounded label with olive border/text.
+   - src/components/StepperDots.tsx: 3–6 dot wizard tracker (active dot = olive; others = sage).
+   - src/components/ChoiceButton.tsx: large, rounded choice tile (used for “Fishing/Hunting” and “Bolt action/Bow” etc.); selected state: olive ring + tiny check icon (lucide Check).
+   - src/components/SSOButtons.tsx: vertically stacked “Continue with Facebook/Google/Apple/Email”; left-aligned icons; outline variant with olive border; equal heights.
+   - src/components/FormStack.tsx: stacked inputs with olive focus ring and subtle help text; used for “Please confirm your information”.
+
+8) Iconography rules (lucide-react)
+   - Use: MapPin, Calendar, CheckCircle2, Shield, CreditCard, Wallet, Fish, Squirrel (or Deer icon substitute).
+   - Size: 18–20 in buttons; 24 in cards. Stroke stays default; color = olive on white, white on olive.
+
+9) Motion (Framer)
+   - Default transition: { duration: 0.18, ease: [0.2, 0.7, 0.2, 1] }
+   - On selection, scale to 0.98 then back to 1; on card mount, fade+rise 8px.
+
+10) Accessibility & contrast
+   - Ensure brand.800 on bone passes WCAG (check focus ring).
+   - Focus styles: 3px olive outer-glow for inputs/buttons and keyboard navigable steppers.
+
+11) Example: Login screen scaffold (align with Image 1)
+   - Page structure:
+     <Hero (img + wave)> → <Card class="re-card max-w-sm mx-auto -mt-20 p-6">
+       <Heading size="lg" fontFamily=display>Log in to your account</Heading>
+       <SSOButtons />
+       <Divider label="or" />
+       <Email/Password fields (FormStack) + “Continue” (solid button)
+       Footer: “Don’t have an account? Sign up” (outline button)
+     </Card>
+
+12) Example: Permit selection (align with Image 2)
+   - “Select the permits you would like” (display serif, size xl)
+   - Two <ChoiceButton> tiles (Fishing, Hunting) with a status dot and wildlife spot art slots.
+   - Bottom <StepperDots count={3} active={0}/>.
+
+13) Example: Method & calendar (align with Image 3)
+   - 3 <ChoiceButton> options; selected shows small check icon.
+   - Month/year pill selectors; neutral calendar card; “Estimated total between $15 and $23” hint line.
+
+14) Example: KYC → found licenses → checkout (align with Image 4–5)
+   - Photo tile (upload placeholder)
+   - FormStack: name, address, DOB, veteran radio, Continue.
+   - “Found licenses” card: icon, short copy, “Add” button toggles to “Added”.
+   - Checkout summary card: big total, line items (license, convenience), payment tiles.
+
+15) Plumb into existing code
+   - Replace any placeholder Pills/steppers/buttons created in earlier prompts with these shared components so the theme is single-source-of-truth.
+
+16) Output
+   - List created/updated files
+   - Show screenshots (Replit’s webview) of:
+     a) Login
+     b) Permit selection
+     c) Method choice + calendar
+     d) Checkout summary
+   - Confirm Lighthouse mobile ≥90 perf/bp/seo (no need to save report)
