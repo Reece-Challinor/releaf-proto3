@@ -11,10 +11,10 @@ export function Pill({ children, isActive = false, onClick }: PillProps) {
     <button
       onClick={onClick}
       className={`
-        px-3 py-1.5 text-sm font-medium rounded-full transition-colors
+        px-3 py-1.5 text-xs font-medium rounded-re-pill transition-all duration-200
         ${isActive 
-          ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" 
-          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          ? "bg-olive text-white border border-olive" 
+          : "bg-white/90 text-olive border border-olive/30 hover:bg-white"
         }
       `}
     >

@@ -1,3 +1,6 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/lora";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -103,8 +106,34 @@
     @apply border-border;
   }
 
+  :root {
+    --re-grad: radial-gradient(120% 120% at 50% 0%, #F7F5EE 40%, #EDE9DB 100%);
+    --font-display: 'Lora', serif;
+    --font-ui: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  
   body {
-    @apply font-sans antialiased bg-background text-foreground;
-    background-color: hsl(240, 5%, 97%);
+    @apply font-sans antialiased text-charcoal;
+    background: var(--re-grad);
+    font-family: var(--font-ui);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+  
+  *::selection {
+    background: #B7C3A3;
+    color: #2F3E2A;
+  }
+}
+
+@layer components {
+  .re-card {
+    @apply rounded-re-card shadow-re-card border border-sage/40 bg-white;
+  }
+  
+  .re-pill {
+    @apply rounded-re-pill border border-olive/30 bg-white;
   }
 }
