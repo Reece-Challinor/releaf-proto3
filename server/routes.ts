@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pingDb } from "./db";
 
 /**
  * RELEAF Demo API Routes
@@ -8,10 +9,17 @@ import { storage } from "./storage";
  * All routes are prefixed with /api for consistency
  * No real licensing is performed - mock data only
  */
+
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Health check endpoint for demo monitoring
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", service: "RELEAF Demo API", timestamp: new Date().toISOString() });
+  // Health check endpoint for demo monitoring with database connectivity
+  app.get("/api/health", async (req, res) => {
+    const dbConnected = await pingDb();
+    res.json({ 
+      ok: true, 
+      db: dbConnected,
+      service: "RELEAF Demo API", 
+      timestamp: new Date().toISOString() 
+    });
   });
 
   // State regulations endpoint - returns regulatory info for selected state

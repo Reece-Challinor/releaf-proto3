@@ -25,26 +25,50 @@ export default function Home() {
     { value: "AR", label: "Arkansas" }
   ];
 
-  const runAutomation = () => {
+  const runAutomation = async () => {
     setIsRunning(true);
     setActivities([]);
     
-    const steps = [
-      "🔍 Analyzing state requirements...",
-      "📋 Identifying required permits...",
-      "🏛️ Checking county regulations...",
-      "📄 Processing documentation...",
-      "✅ Automation complete!"
-    ];
-    
-    steps.forEach((step, index) => {
-      setTimeout(() => {
-        setActivities(prev => [...prev, step]);
-        if (index === steps.length - 1) {
-          setIsRunning(false);
-        }
-      }, (index + 1) * 1000);
-    });
+    try {
+      // Call the health API endpoint
+      const response = await fetch('/api/health');
+      const data = await response.json();
+      
+      // Format timestamp for display
+      const timestamp = new Date().toLocaleTimeString();
+      
+      // Add API response to activity log
+      setActivities(prev => [
+        ...prev,
+        `${timestamp} • API OK: ${data.ok} • DB: ${data.db}`
+      ]);
+      
+      // Continue with automation simulation
+      const steps = [
+        "🔍 Analyzing state requirements...",
+        "📋 Identifying required permits...",
+        "🏛️ Checking county regulations...",
+        "📄 Processing documentation...",
+        "✅ Automation complete!"
+      ];
+      
+      steps.forEach((step, index) => {
+        setTimeout(() => {
+          setActivities(prev => [...prev, step]);
+          if (index === steps.length - 1) {
+            setIsRunning(false);
+          }
+        }, (index + 1) * 1000);
+      });
+    } catch (error) {
+      console.error('API call failed:', error);
+      const timestamp = new Date().toLocaleTimeString();
+      setActivities(prev => [
+        ...prev,
+        `${timestamp} • API Error: Failed to connect to backend`
+      ]);
+      setIsRunning(false);
+    }
   };
 
   const screens = [
