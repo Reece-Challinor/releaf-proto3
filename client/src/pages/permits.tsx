@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { AppShell } from "@/ui/AppShell";
 import { ChoiceButton } from "@/components/ChoiceButton";
 import { Button } from "@/components/Button";
@@ -69,15 +70,18 @@ export default function Permits() {
 
           {/* Action Buttons */}
           <div className="flex justify-between">
-            <Button variant="ghost">
-              Back
-            </Button>
-            <Button 
-              disabled={!selectedPermit}
-              onClick={() => console.log('Continue with:', selectedPermit)}
-            >
-              Continue
-            </Button>
+            <Link href="/">
+              <Button variant="ghost">
+                Back to Home
+              </Button>
+            </Link>
+            <Link href="/calendar">
+              <Button 
+                disabled={!selectedPermit}
+              >
+                Continue
+              </Button>
+            </Link>
           </div>
         </div>
       </AppShell>

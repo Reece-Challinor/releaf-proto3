@@ -1,6 +1,10 @@
 import { ReactNode } from "react";
 import { Pill } from "@/components/Pill";
 
+/**
+ * AppShell Component - Main layout wrapper with RELEAF branding
+ * Provides consistent header with navigation pills across all pages
+ */
 interface AppShellProps {
   children: ReactNode;
 }

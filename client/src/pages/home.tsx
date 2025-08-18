@@ -102,14 +102,12 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {screens.map((screen) => (
                 <Link key={screen.path} href={screen.path}>
-                  <a className="block">
-                    <ChoiceButton
-                      icon={screen.icon}
-                      subtitle={screen.subtitle}
-                    >
-                      {screen.title}
-                    </ChoiceButton>
-                  </a>
+                  <ChoiceButton
+                    icon={screen.icon}
+                    subtitle={screen.subtitle}
+                  >
+                    {screen.title}
+                  </ChoiceButton>
                 </Link>
               ))}
             </div>

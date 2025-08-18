@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { AppShell } from "@/ui/AppShell";
 import { Button } from "@/components/Button";
 import { StepperDots } from "@/components/StepperDots";
@@ -114,14 +115,15 @@ export default function Calendar() {
 
           {/* Action Buttons */}
           <div className="flex justify-between mt-8">
-            <Button variant="ghost">
-              Back
-            </Button>
+            <Link href="/permits">
+              <Button variant="ghost">
+                Back to Permits
+              </Button>
+            </Link>
             <Button 
               disabled={!selectedDate || !selectedTime}
-              onClick={() => console.log('Continue with:', selectedDate, selectedTime)}
             >
-              Continue
+              Continue to Checkout
             </Button>
           </div>
         </div>

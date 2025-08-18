@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { HeroWave } from "@/ui/HeroWave";
 import { SSOButtons } from "@/components/SSOButtons";
 import { FormStack, FormField } from "@/components/FormStack";

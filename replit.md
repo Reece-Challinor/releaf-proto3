@@ -4,9 +4,29 @@
 
 RELEAF is a regulatory automation platform designed to streamline environmental compliance processes with the tagline "Less red tape. More wild places." The application provides automated tools for processing permits, managing compliance requirements, and navigating state-specific regulations across Texas, Colorado, and Arkansas. Built as a modern web application, it features a clean, mobile-first interface with a retro-modern outdoor aesthetic that emphasizes usability and environmental themes.
 
+## Recent Changes (Version 1.5 - January 2025)
+
+### Brand System Implementation
+- Implemented unified retro-modern outdoor theme with vintage landscape aesthetics
+- Created custom brand components: AppShell, HeroWave, StepperDots, ChoiceButton, SSOButtons, FormStack
+- Applied consistent forest/outdoor color palette throughout application
+- Added proper navigation between all screens with back buttons
+
+### API Integration  
+- Added health check endpoint at `/api/health`
+- Created state regulations endpoint at `/api/regulations/:state`
+- Implemented permits listing endpoint at `/api/permits`
+- Added automation status endpoint at `/api/automation/status`
+
+### Navigation Flow
+- Home → Login / Permits / Calendar screens
+- Permits → Calendar → Checkout (coming soon)
+- All pages have proper back navigation to previous screens
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Code organization: Minimal files, consolidated components where possible.
 
 ## System Architecture
 
@@ -46,34 +66,79 @@ Preferred communication style: Simple, everyday language.
 - **Compliance Dashboard**: Overview of environmental impact, safety standards, and documentation status
 - **Activity Tracking**: Real-time logging system for automation processes and permit updates
 
+## Component Architecture
+
+### Core Brand Components
+- **AppShell**: Main layout wrapper with consistent header and navigation
+- **HeroWave**: SVG wave decoration for vintage landscape aesthetic  
+- **StepperDots**: Progress indicator with animated dots for multi-step flows
+- **ChoiceButton**: Selection cards with icons and checkmarks for permit/option selection
+- **SSOButtons**: Social sign-on buttons for Facebook, Google, Apple, Email
+- **FormStack & FormField**: Consistent form layout and input styling
+- **Button**: Core button component with primary, secondary, outline, ghost variants
+- **Pill**: Compact status indicator with active/inactive states
+- **SegmentedControl**: Multi-option selector for state selection
+
+### Page Components
+- **Home**: Landing page with hero section, brand examples, state selector, automation demo
+- **Login**: Authentication flow with SSO options and email/password form
+- **Permits**: Permit type selection with icon cards and progress stepper
+- **Calendar**: Date/time booking interface for site visits
+
+## API Endpoints
+
+All API routes are prefixed with `/api` for consistency:
+
+- `GET /api/health` - Health check endpoint for monitoring
+- `GET /api/regulations/:state` - Returns regulatory info for TX, CO, AR
+- `GET /api/permits` - Lists available permit types with document requirements  
+- `GET /api/automation/status` - Returns automation service status
+
+## Configuration Files
+
+### Vite Configuration
+- React plugin for JSX transformation
+- Replit integration plugins
+- Path aliases for clean imports (@, @/components, @/ui, etc.)
+- Server configuration on port 5000
+
+### Tailwind Configuration  
+- Custom color tokens: forest, olive, moss, sage, sand, bone, charcoal
+- Custom fonts: Inter (UI), Lora (Display)
+- Custom border radius: re-card, re-pill
+- Custom shadows: re-card
+- Typography plugin for prose styling
+
+### TypeScript Configuration
+- Strict type checking enabled
+- Path mappings for module resolution
+- JSX preserve for Vite handling
+
+### PostCSS Configuration
+- Tailwind CSS processing
+- Autoprefixer for browser compatibility
+
 ## External Dependencies
 
-### Database Services
-- **Neon Database**: Serverless PostgreSQL hosting (@neondatabase/serverless)
-- **Connection Pooling**: Built-in connection management for serverless environments
+### Core Libraries
+- **React 18**: UI framework with TypeScript support
+- **Wouter**: Lightweight routing library
+- **Express**: Backend server framework
+- **Drizzle ORM**: TypeScript-first database ORM
 
-### UI and Design Libraries
-- **Chakra UI**: Component library for accessible React components with emotion styling
-- **Radix UI**: Unstyled, accessible component primitives for complex interactions
-- **Lucide React**: Modern icon library for consistent iconography
-- **Tailwind CSS**: Utility-first CSS framework for responsive design
+### UI Libraries  
+- **Radix UI**: Accessible component primitives (30+ components installed)
+- **Lucide React**: Icon library for UI elements
+- **Tailwind CSS**: Utility-first CSS framework
+- **Class Variance Authority**: Component variant management
 
-### Development and Build Tools
-- **Vite**: Fast development server and build tool with React plugin
-- **TypeScript**: Static type checking across client, server, and shared code
-- **ESBuild**: Fast JavaScript bundler for production builds
-- **PostCSS**: CSS processing with Autoprefixer for browser compatibility
+### Data Management
+- **TanStack Query**: Server state and caching
+- **React Hook Form**: Form state management
+- **Zod**: Schema validation
 
-### Form and Data Management
-- **React Hook Form**: Performant form library with validation
-- **Zod**: Runtime type validation and schema parsing
-- **TanStack Query**: Server state management with caching and background updates
-
-### Styling and Animation
-- **Framer Motion**: Animation library for micro-interactions
-- **Class Variance Authority**: Utility for component variant styling
-- **Tailwind Merge**: Intelligent Tailwind class merging for dynamic styling
-
-### Development Environment
-- **Replit Integration**: Specialized plugins for Replit development environment
-- **Runtime Error Handling**: Development-time error overlay for better debugging experience
+### Development Tools
+- **Vite**: Build tool and dev server
+- **TypeScript**: Type safety across stack
+- **PostCSS**: CSS processing pipeline
+- **Replit Plugins**: Development environment integration

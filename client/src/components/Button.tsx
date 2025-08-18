@@ -1,5 +1,9 @@
 import { ReactNode } from "react";
 
+/**
+ * Button Component - Core UI element with RELEAF brand styling
+ * Supports multiple variants matching the outdoor/environmental theme
+ */
 interface ButtonProps {
   children: ReactNode;
   onClick?: () => void;
