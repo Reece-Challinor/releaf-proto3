@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pingDb } from "./db";
+import { automationRouter } from "./routes/automation";
 
 /**
  * RELEAF Demo API Routes
@@ -21,6 +22,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString() 
     });
   });
+
+  // Automation routes for demo flow
+  app.use("/api/automation", automationRouter);
 
   // State regulations endpoint - returns regulatory info for selected state
   app.get("/api/regulations/:state", (req, res) => {

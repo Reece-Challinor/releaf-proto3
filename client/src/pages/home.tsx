@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "wouter";
 import { Activity, Play, ArrowRight, Trees, Calendar, FileCheck, User } from "lucide-react";
 import { AppShell } from "@/ui/AppShell";
@@ -7,6 +7,7 @@ import { SegmentedControl } from "@/components/SegmentedControl";
 import { Pill } from "@/components/Pill";
 import { Button } from "@/components/Button";
 import { ChoiceButton } from "@/components/ChoiceButton";
+import AutomationLog from "@/components/AutomationLog";
 
 /**
  * RELEAF Demo Home Page
@@ -16,8 +17,8 @@ import { ChoiceButton } from "@/components/ChoiceButton";
  */
 export default function Home() {
   const [selectedState, setSelectedState] = useState("TX");
-  const [isRunning, setIsRunning] = useState(false);
-  const [activities, setActivities] = useState<string[]>([]);
+  const [log, setLog] = useState<{t:string; msg:string}[]>([]);
+  const [running, setRunning] = useState(false);
 
   const stateOptions = [
     { value: "TX", label: "Texas" },
@@ -25,51 +26,49 @@ export default function Home() {
     { value: "AR", label: "Arkansas" }
   ];
 
-  const runAutomation = async () => {
-    setIsRunning(true);
-    setActivities([]);
+  function ts() { 
+    return new Date().toLocaleTimeString(); 
+  }
+
+  const runAutomation = useCallback(async () => {
+    setRunning(true);
+    setLog([]);
     
     try {
-      // Call the health API endpoint
-      const response = await fetch('/api/health');
-      const data = await response.json();
-      
-      // Format timestamp for display
-      const timestamp = new Date().toLocaleTimeString();
-      
-      // Add API response to activity log
-      setActivities(prev => [
-        ...prev,
-        `${timestamp} • API OK: ${data.ok} • DB: ${data.db}`
-      ]);
-      
-      // Continue with automation simulation
-      const steps = [
-        "🔍 Analyzing state requirements...",
-        "📋 Identifying required permits...",
-        "🏛️ Checking county regulations...",
-        "📄 Processing documentation...",
-        "✅ Automation complete!"
-      ];
-      
-      steps.forEach((step, index) => {
-        setTimeout(() => {
-          setActivities(prev => [...prev, step]);
-          if (index === steps.length - 1) {
-            setIsRunning(false);
-          }
-        }, (index + 1) * 1000);
+      // Call the new automation endpoint
+      const res = await fetch("/api/automation", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ 
+          state: selectedState, 
+          license: `${selectedState}-HUNT-RES`, 
+          autofill: true 
+        })
       });
+      
+      const data = await res.json();
+      
+      if (!data.ok) { 
+        setLog(x => [...x, { t: ts(), msg: "Error starting automation" }]); 
+        setRunning(false); 
+        return; 
+      }
+
+      // Animate through the steps
+      for (const step of data.steps) {
+        setLog(x => [...x, { t: ts(), msg: step.label }]);
+        // simulate time passing
+        await new Promise(r => setTimeout(r, step.delayMs));
+      }
+      
+      setLog(x => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
+      setRunning(false);
     } catch (error) {
-      console.error('API call failed:', error);
-      const timestamp = new Date().toLocaleTimeString();
-      setActivities(prev => [
-        ...prev,
-        `${timestamp} • API Error: Failed to connect to backend`
-      ]);
-      setIsRunning(false);
+      console.error('Automation failed:', error);
+      setLog(x => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
+      setRunning(false);
     }
-  };
+  }, [selectedState]);
 
   const screens = [
     {
@@ -168,10 +167,10 @@ export default function Home() {
                 </h2>
                 <Button
                   onClick={runAutomation}
-                  disabled={isRunning}
+                  disabled={running}
                   fullWidth
                 >
-                  {isRunning ? (
+                  {running ? (
                     <>Processing...</>
                   ) : (
                     <>
@@ -212,20 +211,7 @@ export default function Home() {
               <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
                 Activity Log
               </h2>
-              <div className="space-y-2 min-h-[400px]">
-                {activities.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No activities yet. Run automation to see updates.</p>
-                ) : (
-                  activities.map((activity, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-sand/50 rounded-lg text-sm text-charcoal animate-fade-in"
-                    >
-                      {activity}
-                    </div>
-                  ))
-                )}
-              </div>
+              <AutomationLog items={log} />
             </div>
           </div>
         </div>
