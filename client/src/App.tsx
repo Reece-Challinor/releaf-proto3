@@ -8,6 +8,8 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Permits from "@/pages/permits";
 import Calendar from "@/pages/calendar";
+import CheckoutSuccess from "@/pages/checkout/success";
+import CheckoutCancel from "@/pages/checkout/cancel";
 
 function Router() {
   return (
@@ -16,6 +18,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/permits" component={Permits} />
       <Route path="/calendar" component={Calendar} />
+      <Route path="/checkout/success" component={CheckoutSuccess} />
+      <Route path="/checkout/cancel" component={CheckoutCancel} />
       <Route component={NotFound} />
     </Switch>
   );

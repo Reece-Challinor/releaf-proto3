@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Play } from "lucide-react";
+import { Play, ShoppingCart } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
 import { AppShell } from "@/ui/AppShell";
 import { StepperDots } from "@/components/StepperDots";
 import { Button } from "@/components/Button";
@@ -7,6 +8,8 @@ import AutomationLog from "@/components/AutomationLog";
 import { WalletCard } from "@/components/WalletCard";
 import { STATES, LICENSES } from "@/constants/catalog";
 import { MOCK_PROFILE } from "@/constants/profile";
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
 /**
  * Home = App-like, responsive screen:
@@ -346,12 +349,67 @@ export default function Home() {
 
             {/* Wallet Card (if issued) */}
             {issued && (
-              <WalletCard
-                stateCode={issued.stateCode}
-                licenseId={issued.licenseId}
-                id={issued.id}
-                timestamp={issued.timestamp}
-              />
+              <>
+                <WalletCard
+                  stateCode={issued.stateCode}
+                  licenseId={issued.licenseId}
+                  id={issued.id}
+                  timestamp={issued.timestamp}
+                />
+                
+                {/* Checkout Button */}
+                <div className="re-card p-6">
+                  <h2
+                    className="mb-4 text-lg font-semibold text-charcoal"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    Complete Purchase
+                  </h2>
+                  <Button
+                    onClick={async () => {
+                      try {
+                        const res = await fetch("/api/checkout", {
+                          method: "POST",
+                          headers: { "content-type": "application/json" },
+                          body: JSON.stringify({ 
+                            state: issued.stateCode, 
+                            license: issued.licenseId 
+                          })
+                        });
+                        const data = await res.json();
+                        
+                        if (!data.ok) {
+                          alert("Checkout failed: " + (data.error || "Unknown error"));
+                          return;
+                        }
+                        
+                        // If we have a direct URL, use that
+                        if (data.url) {
+                          window.location.href = data.url;
+                          return;
+                        }
+                        
+                        // Otherwise try Stripe.js redirect
+                        const stripe = await stripePromise;
+                        if (stripe && data.id) {
+                          await stripe.redirectToCheckout({ sessionId: data.id });
+                        }
+                      } catch (error) {
+                        console.error("Checkout error:", error);
+                        alert("Failed to start checkout");
+                      }
+                    }}
+                    fullWidth
+                    className="bg-forest hover:bg-olive"
+                  >
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Proceed to Checkout ($25 test)
+                  </Button>
+                  <p className="mt-3 text-xs text-gray-600">
+                    Test mode: Use card 4242 4242 4242 4242
+                  </p>
+                </div>
+              </>
             )}
 
             {/* Activity Log */}

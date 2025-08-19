@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { pingDb } from "./db";
 import { automationRouter } from "./routes/automation";
+import { checkoutRouter } from "./routes/checkout";
 
 /**
  * RELEAF Demo API Routes
@@ -24,6 +25,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Automation routes for demo flow
   app.use("/api/automation", automationRouter);
+  
+  // Checkout route for Stripe integration
+  app.use("/api/checkout", checkoutRouter);
 
   // State regulations endpoint - returns regulatory info for selected state
   app.get("/api/regulations/:state", (req, res) => {
