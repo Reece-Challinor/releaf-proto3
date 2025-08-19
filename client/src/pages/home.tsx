@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Play, ShoppingCart } from "lucide-react";
+import { Play, ShoppingCart, MapPin, Shield, CreditCard, Check } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { AppShell } from "@/ui/AppShell";
 import { StepperDots } from "@/components/StepperDots";
@@ -132,6 +132,13 @@ export default function Home() {
       setIssued(licenseData);
       localStorage.setItem("releaf_last_license", JSON.stringify(licenseData));
       
+      // Cache for PWA offline access
+      if (typeof window !== 'undefined') {
+        import('@/lib/pwa').then(({ cacheWalletCard }) => {
+          cacheWalletCard(licenseData);
+        });
+      }
+      
       setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
       
       track("automation_completed");
@@ -235,7 +242,7 @@ export default function Home() {
       {/* Floating demo button */}
       <button
         onClick={toggleDemo}
-        className="fixed bottom-4 right-4 z-50 rounded-full bg-olive px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-forest transition-colors"
+        className="floating-button bg-olive text-white hover:bg-forest"
       >
         {isDemo ? "Exit Demo" : "Start Demo"}
       </button>
@@ -257,22 +264,19 @@ export default function Home() {
               </div>
 
               {/* step content */}
-              <div className="re-card mt-6 p-5">
+              <div className="re-card mt-6 p-6">
                 {flowStep === 1 && (
                   <>
-                    <h2
-                      className="mb-4 text-center text-xl font-semibold text-charcoal"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
+                    <h2 className="mb-4 text-center text-display-md text-charcoal">
                       Select the permits<br />you would like
                     </h2>
                     <div className="grid gap-3">
                       <button
                         onClick={() => setPermitChoice("fishing")}
-                        className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all ${
+                        className={`choice-button ${
                           permitChoice === "fishing"
-                            ? "border-olive bg-sand text-olive"
-                            : "border-sage/40 text-charcoal hover:border-sage"
+                            ? "choice-button--selected"
+                            : "choice-button--unselected"
                         }`}
                       >
                         <span>Fishing</span>
@@ -284,10 +288,10 @@ export default function Home() {
                       </button>
                       <button
                         onClick={() => setPermitChoice("hunting")}
-                        className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all ${
+                        className={`choice-button ${
                           permitChoice === "hunting"
-                            ? "border-olive bg-sand text-olive"
-                            : "border-sage/40 text-charcoal hover:border-sage"
+                            ? "choice-button--selected"
+                            : "choice-button--unselected"
                         }`}
                       >
                         <span>Hunting</span>
@@ -303,17 +307,17 @@ export default function Home() {
 
                 {flowStep === 2 && (
                   <>
-                    <h2
-                      className="mb-2 text-left text-xl font-semibold text-charcoal"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      Your information
-                    </h2>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Shield className="h-4 w-4 text-olive" />
+                      <h2 className="text-display-md text-charcoal">
+                        Your information
+                      </h2>
+                    </div>
                     <p className="mb-4 text-sm text-gray-600">
                       Autofill from verified profile is{" "}
-                      <strong>{autofill ? "ON" : "OFF"}</strong>.
+                      <strong className="text-olive">{autofill ? "ON" : "OFF"}</strong>.
                     </p>
-                    <div className="grid gap-2 rounded-xl border p-4 text-sm">
+                    <div className="grid gap-2 rounded-xl border border-sage/20 p-4 text-sm bg-white/50">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Name</span>
                         <span className="font-medium">{MOCK_PROFILE.name}</span>
@@ -332,16 +336,19 @@ export default function Home() {
 
                 {flowStep === 3 && (
                   <>
-                    <h2
-                      className="mb-2 text-left text-xl font-semibold text-charcoal"
-                      style={{ fontFamily: "var(--font-display)" }}
-                    >
-                      Checkout
-                    </h2>
+                    <div className="flex items-center gap-2 mb-2">
+                      <CreditCard className="h-4 w-4 text-olive" />
+                      <h2 className="text-display-md text-charcoal">
+                        Checkout
+                      </h2>
+                    </div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      <p className="text-sm text-gray-600">
+                        {licenseId} • {stateCode}
+                      </p>
+                    </div>
                     <p className="text-sm text-gray-600">
-                      {licenseId} • {stateCode}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600">
                       Secure payment and issuance preview.
                     </p>
                   </>

@@ -5,53 +5,98 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  /* Mobile-first card component */
+  .re-card {
+    @apply bg-white/70 border border-sage/20 rounded-2xl backdrop-blur-sm;
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease;
+  }
+  
+  .re-card:hover {
+    box-shadow: var(--shadow-card-hover);
+  }
+  
+  /* Choice buttons with proper touch targets */
+  .choice-button {
+    @apply flex items-center justify-between rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all min-h-[44px] touch-none;
+  }
+  
+  .choice-button--selected {
+    @apply border-olive bg-sand text-olive;
+  }
+  
+  .choice-button--unselected {
+    @apply border-sage/40 text-charcoal hover:border-sage active:scale-[0.98];
+  }
+  
+  /* Typography scale optimized for mobile */
+  .text-display-lg {
+    @apply text-xl font-semibold;
+    font-family: var(--font-display);
+    line-height: 1.25;
+  }
+  
+  .text-display-md {
+    @apply text-lg font-semibold;
+    font-family: var(--font-display);
+    line-height: 1.3;
+  }
+  
+  .text-display-sm {
+    @apply text-base font-semibold;
+    font-family: var(--font-display);
+    line-height: 1.4;
+  }
+  
+  /* Floating elements */
+  .floating-button {
+    @apply fixed bottom-4 right-4 z-50 rounded-full px-4 py-2 text-sm font-medium transition-all min-h-[44px] touch-none active:scale-95;
+    box-shadow: var(--shadow-floating);
+  }
+}
+
 :root {
+  /* RELEAF Brand Tokens */
+  --forest: #2F3E2A;
+  --olive: #4E5F34;
+  --moss: #6E7F4F;
+  --sage: #B7C3A3;
+  --sand: #EDE9DB;
+  --bone: #F7F5EE;
+  --charcoal: #1F2937;
+  
+  /* Font stacks */
+  --font-display: 'Lora', serif;
+  --font-ui: 'Inter Variable', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  
+  /* Enhanced shadows for mobile */
+  --shadow-card: 0 4px 12px rgba(47,62,42,0.08), 0 2px 4px rgba(47,62,42,0.04);
+  --shadow-card-hover: 0 8px 20px rgba(47,62,42,0.12), 0 4px 8px rgba(47,62,42,0.06);
+  --shadow-button: 0 2px 4px rgba(47,62,42,0.1);
+  --shadow-floating: 0 12px 32px rgba(47,62,42,0.15), 0 4px 12px rgba(47,62,42,0.08);
+  
+  /* Tailwind-compatible variables */
   --background: hsl(0, 0%, 98%);
   --foreground: hsl(210, 25%, 8%);
   --card: hsl(180, 7%, 97%);
   --card-foreground: hsl(210, 25%, 8%);
   --popover: hsl(0, 0%, 100%);
   --popover-foreground: hsl(210, 25%, 8%);
-  --primary: hsl(157, 56%, 44%);
+  --primary: hsl(84, 15%, 28%);
   --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(210, 25%, 8%);
   --secondary-foreground: hsl(0, 0%, 100%);
   --muted: hsl(210, 40%, 93%);
   --muted-foreground: hsl(215, 16%, 47%);
   --accent: hsl(153, 27%, 91%);
-  --accent-foreground: hsl(157, 56%, 44%);
+  --accent-foreground: hsl(84, 15%, 28%);
   --destructive: hsl(0, 84%, 60%);
   --destructive-foreground: hsl(0, 0%, 100%);
   --border: hsl(214, 32%, 91%);
   --input: hsl(214, 32%, 91%);
-  --ring: hsl(157, 56%, 44%);
-  --chart-1: hsl(157, 56%, 44%);
-  --chart-2: hsl(160, 100%, 36%);
-  --chart-3: hsl(42, 93%, 56%);
-  --chart-4: hsl(147, 79%, 42%);
-  --chart-5: hsl(341, 75%, 51%);
-  --sidebar: hsl(180, 7%, 97%);
-  --sidebar-foreground: hsl(210, 25%, 8%);
-  --sidebar-primary: hsl(157, 56%, 44%);
-  --sidebar-primary-foreground: hsl(0, 0%, 100%);
-  --sidebar-accent: hsl(153, 27%, 91%);
-  --sidebar-accent-foreground: hsl(157, 56%, 44%);
-  --sidebar-border: hsl(205, 25%, 91%);
-  --sidebar-ring: hsl(157, 56%, 44%);
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --ring: hsl(84, 15%, 28%);
   --radius: 0.75rem;
-  --shadow-2xs: 0px 1px 2px 0px hsl(0, 0%, 0%, 0.05);
-  --shadow-xs: 0px 1px 2px 0px hsl(0, 0%, 0%, 0.1);
-  --shadow-sm: 0px 1px 3px 0px hsl(0, 0%, 0%, 0.1), 0px 1px 2px -1px hsl(0, 0%, 0%, 0.1);
-  --shadow: 0px 1px 3px 0px hsl(0, 0%, 0%, 0.1), 0px 1px 2px -1px hsl(0, 0%, 0%, 0.1);
-  --shadow-md: 0px 4px 6px -1px hsl(0, 0%, 0%, 0.1), 0px 2px 4px -2px hsl(0, 0%, 0%, 0.1);
-  --shadow-lg: 0px 10px 15px -3px hsl(0, 0%, 0%, 0.1), 0px 4px 6px -4px hsl(0, 0%, 0%, 0.1);
-  --shadow-xl: 0px 20px 25px -5px hsl(0, 0%, 0%, 0.1), 0px 8px 10px -6px hsl(0, 0%, 0%, 0.1);
-  --shadow-2xl: 0px 25px 50px -12px hsl(0, 0%, 0%, 0.25);
-  --tracking-normal: 0em;
-  --spacing: 0.25rem;
 }
 
 .dark {
