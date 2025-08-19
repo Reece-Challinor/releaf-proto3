@@ -1,0 +1,135 @@
+Create a logical and sequential thinking plan. Use all of your tools to develop a logical implementation of the following into our existing architecture (and building upon what we've created).
+Add State & License Selectors (TX/CO/AR presets)
+
+**Goal:** Select TX/CO/AR and a corresponding license preset; pass both to `/api/automation`; reflect selections in the UI.
+
+**Do this:**
+
+1. **Add constants** `src/constants/catalog.ts`:
+
+```ts
+export const STATES = [
+  { code: "TX", name: "Texas" },
+  { code: "CO", name: "Colorado" },
+  { code: "AR", name: "Arkansas" },
+];
+
+export const LICENSES: Record<string, { id: string; label: string }[]> = {
+  TX: [
+    { id: "TX-HUNT-RES", label: "Resident Hunting (TX)" },
+    { id: "TX-FISH-RES", label: "Resident Fishing (TX)" },
+    { id: "TX-HUNT-NR",  label: "Non-Resident Hunting (TX)" },
+  ],
+  CO: [
+    { id: "CO-HUNT-RES", label: "Resident Small Game (CO)" },
+    { id: "CO-FISH-RES", label: "Resident Annual Fishing (CO)" },
+    { id: "CO-HUNT-NR",  label: "Non-Resident Combo (CO)" },
+  ],
+  AR: [
+    { id: "AR-HUNT-RES", label: "Resident Hunting (AR)" },
+    { id: "AR-FISH-RES", label: "Resident Fishing (AR)" },
+    { id: "AR-HUNT-NR",  label: "Non-Resident Hunting (AR)" },
+  ],
+};
+```
+
+2. **UI controls** (in Home/App):
+
+```tsx
+import { STATES, LICENSES } from "../constants/catalog";
+import { ButtonGroup, Button, Select, HStack, Text } from "@chakra-ui/react";
+import { useMemo, useState } from "react";
+
+const [stateCode, setStateCode] = useState("TX");
+const licenseList = useMemo(() => LICENSES[stateCode] || [], [stateCode]);
+const [licenseId, setLicenseId] = useState(licenseList[0]?.id || "TX-HUNT-RES");
+```
+
+Add a **segmented control** and a **Select**:
+
+```tsx
+<HStack spacing={3} wrap="wrap">
+  <ButtonGroup isAttached variant="outline" size="sm">
+    {STATES.map(s => (
+      <Button key={s.code}
+              colorScheme={s.code === stateCode ? "green" : undefined}
+              onClick={()=>{ setStateCode(s.code); setLicenseId((LICENSES[s.code]||[])[0]?.id || "");}}>
+        {s.name}
+      </Button>
+    ))}
+  </ButtonGroup>
+
+  <Select width="auto" value={licenseId} onChange={(e)=>setLicenseId(e.target.value)} size="sm">
+    {licenseList.map(l => <option key={l.id} value={l.id}>{l.label}</option>)}
+  </Select>
+
+  <Text fontSize="sm" color="gray.500">Selected: {stateCode} • {licenseId}</Text>
+</HStack>
+```
+
+3. **Wire into the POST** in Prompt #3’s `run()`:
+
+```ts
+body: JSON.stringify({ state: stateCode, license: licenseId, autofill: true })
+```
+
+**Verify:** Changing state updates license list; clicking Run shows the chosen state/license in the first log line (add a line if you want).
+
+---
+
+AND Profile Autofill Card (mocked profile + toggle)
+
+**Goal:** Show a mocked, verifiable profile; allow toggling “Autofill from profile”; include the profile in the POST payload when enabled.
+
+**Do this:**
+
+1. **Create profile data** `src/constants/profile.ts`:
+
+```ts
+export const MOCK_PROFILE = {
+  name: "Jordan Sample",
+  dob: "1990-05-04",
+  address: "123 River Rd, Plano, TX 75023",
+  hunterEdId: "TX-HE-1234567",
+  email: "demo@releaf.app",
+};
+```
+
+2. **UI card** `src/components/ProfileCard.tsx`:
+
+```tsx
+import { Card, CardBody, Heading, Switch, FormControl, FormLabel, Box, Text } from "@chakra-ui/react";
+import React from "react";
+export default function ProfileCard({profile, enabled, onToggle}:{profile:any; enabled:boolean; onToggle:(b:boolean)=>void}) {
+  return (
+    <Card variant="outline">
+      <CardBody>
+        <Heading size="sm" mb={2}>Profile</Heading>
+        <FormControl display="flex" alignItems="center" mb={3}>
+          <FormLabel htmlFor="autofill" mb="0">Autofill from profile</FormLabel>
+          <Switch id="autofill" isChecked={enabled} onChange={(e)=>onToggle(e.target.checked)} colorScheme="green"/>
+        </FormControl>
+        <Box className="grid gap-1 text-sm">
+          <Text><b>Name:</b> {profile.name}</Text>
+          <Text><b>DOB:</b> {profile.dob}</Text>
+          <Text><b>Address:</b> {profile.address}</Text>
+          <Text><b>Hunter Ed:</b> {profile.hunterEdId}</Text>
+          <Text><b>Email:</b> {profile.email}</Text>
+        </Box>
+      </CardBody>
+    </Card>
+  );
+}
+```
+
+3. **Integrate in Home/App**:
+
+```tsx
+import { MOCK_PROFILE } from "../constants/profile";
+import ProfileCard from "../components/ProfileCard";
+const [autofill, setAutofill] = useState(true);
+```
+
+Add `<ProfileCard profile={MOCK_PROFILE} enabled={autofill} onToggle={setAutofill} />` above the Automation card, and include `profile: autofill ? MOCK_PROFILE : undefined` in the POST body.
+
+**Verify:** Toggle on/off and confirm the payload includes/excludes profile (log a first line like “Using profile: true/false”).

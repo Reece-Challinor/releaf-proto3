@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Link } from "wouter";
 import { Activity, Play, ArrowRight, Trees, Calendar, FileCheck, User } from "lucide-react";
 import { AppShell } from "@/ui/AppShell";
@@ -8,6 +8,9 @@ import { Pill } from "@/components/Pill";
 import { Button } from "@/components/Button";
 import { ChoiceButton } from "@/components/ChoiceButton";
 import AutomationLog from "@/components/AutomationLog";
+import ProfileCard from "@/components/ProfileCard";
+import { STATES, LICENSES } from "@/constants/catalog";
+import { MOCK_PROFILE } from "@/constants/profile";
 
 /**
  * RELEAF Demo Home Page
@@ -16,15 +19,14 @@ import AutomationLog from "@/components/AutomationLog";
  * No real licensing operations - mock data only
  */
 export default function Home() {
-  const [selectedState, setSelectedState] = useState("TX");
+  const [stateCode, setStateCode] = useState("TX");
   const [log, setLog] = useState<{t:string; msg:string}[]>([]);
   const [running, setRunning] = useState(false);
-
-  const stateOptions = [
-    { value: "TX", label: "Texas" },
-    { value: "CO", label: "Colorado" },
-    { value: "AR", label: "Arkansas" }
-  ];
+  const [autofill, setAutofill] = useState(true);
+  
+  // License management based on selected state
+  const licenseList = useMemo(() => LICENSES[stateCode] || [], [stateCode]);
+  const [licenseId, setLicenseId] = useState(licenseList[0]?.id || "TX-HUNT-RES");
 
   function ts() { 
     return new Date().toLocaleTimeString(); 
@@ -35,14 +37,21 @@ export default function Home() {
     setLog([]);
     
     try {
+      // Log the current selections
+      setLog([{ 
+        t: ts(), 
+        msg: `Starting automation for ${stateCode} • ${licenseId} • Profile: ${autofill ? 'enabled' : 'disabled'}` 
+      }]);
+      
       // Call the new automation endpoint
       const res = await fetch("/api/automation", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ 
-          state: selectedState, 
-          license: `${selectedState}-HUNT-RES`, 
-          autofill: true 
+          state: stateCode, 
+          license: licenseId, 
+          autofill: autofill,
+          profile: autofill ? MOCK_PROFILE : undefined
         })
       });
       
@@ -68,7 +77,7 @@ export default function Home() {
       setLog(x => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
       setRunning(false);
     }
-  }, [selectedState]);
+  }, [stateCode, licenseId, autofill]);
 
   const screens = [
     {
@@ -145,18 +154,53 @@ export default function Home() {
           <div className="grid gap-8 md:grid-cols-2">
             {/* Left Column - Controls */}
             <div className="space-y-6">
-              {/* State Selection */}
+              {/* Profile Card */}
+              <ProfileCard 
+                profile={MOCK_PROFILE} 
+                enabled={autofill} 
+                onToggle={setAutofill} 
+              />
+
+              {/* State & License Selection */}
               <div className="re-card p-6">
                 <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
-                  Select State
+                  Select State & License
                 </h2>
-                <SegmentedControl
-                  options={stateOptions}
-                  value={selectedState}
-                  onChange={setSelectedState}
-                />
+                
+                {/* State Selector */}
+                <div className="flex gap-1 mb-4">
+                  {STATES.map(s => (
+                    <button
+                      key={s.code}
+                      onClick={() => {
+                        setStateCode(s.code);
+                        setLicenseId((LICENSES[s.code] || [])[0]?.id || "");
+                      }}
+                      className={`
+                        px-4 py-2 text-sm font-medium rounded-lg transition-colors
+                        ${s.code === stateCode 
+                          ? 'bg-forest text-white' 
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
+                      `}
+                    >
+                      {s.name}
+                    </button>
+                  ))}
+                </div>
+                
+                {/* License Selector */}
+                <select
+                  value={licenseId}
+                  onChange={(e) => setLicenseId(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
+                >
+                  {licenseList.map(l => (
+                    <option key={l.id} value={l.id}>{l.label}</option>
+                  ))}
+                </select>
+                
                 <p className="mt-3 text-sm text-gray-600">
-                  Current selection: {stateOptions.find(s => s.value === selectedState)?.label}
+                  Selected: {stateCode} • {licenseId}
                 </p>
               </div>
 
@@ -180,7 +224,7 @@ export default function Home() {
                   )}
                 </Button>
                 <p className="mt-3 text-sm text-gray-600">
-                  Simulate regulatory compliance automation for {selectedState}
+                  Simulate hunting license automation for {stateCode}
                 </p>
               </div>
 
