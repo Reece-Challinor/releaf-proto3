@@ -3,12 +3,22 @@ import Stripe from "stripe";
 
 export const checkoutRouter = Router();
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { 
-  apiVersion: "2024-06-20" as Stripe.LatestApiVersion 
-});
+// Only initialize Stripe if the secret key is available
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { 
+      apiVersion: "2024-06-20" as Stripe.LatestApiVersion 
+    })
+  : null;
 
 checkoutRouter.post("/", async (req, res) => {
   try {
+    if (!stripe) {
+      return res.status(500).json({ 
+        ok: false, 
+        error: "Stripe is not configured. Please add STRIPE_SECRET_KEY environment variable." 
+      });
+    }
+    
     const { state = "TX", license = "TX-HUNT-RES" } = req.body || {};
     
     // Get the origin from headers or default to local dev

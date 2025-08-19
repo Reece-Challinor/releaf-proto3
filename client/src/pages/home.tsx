@@ -34,7 +34,7 @@ export default function Home() {
   const [issued, setIssued] = useState<{ id: string; stateCode: string; licenseId: string; timestamp: number } | null>(null);
   const ts = () => new Date().toLocaleTimeString();
   
-  // Load last issued license on mount
+  // Load last issued license and user selections on mount
   useEffect(() => {
     const stored = localStorage.getItem("releaf_last_license");
     if (stored) {
@@ -45,7 +45,23 @@ export default function Home() {
         console.error("Failed to load last license:", e);
       }
     }
+    
+    // Restore state and license selections
+    const storedState = localStorage.getItem("releaf_state_code");
+    const storedLicense = localStorage.getItem("releaf_license_id");
+    if (storedState && ["TX", "CO", "AR"].includes(storedState)) {
+      setStateCode(storedState as "TX" | "CO" | "AR");
+    }
+    if (storedLicense) {
+      setLicenseId(storedLicense);
+    }
   }, []);
+
+  // Persist state and license selections to localStorage
+  useEffect(() => {
+    localStorage.setItem("releaf_state_code", stateCode);
+    localStorage.setItem("releaf_license_id", licenseId);
+  }, [stateCode, licenseId]);
 
   const runAutomation = useCallback(async () => {
     setRunning(true);
@@ -77,6 +93,7 @@ export default function Home() {
       }
       
       setTotalSteps(data.steps.length);
+      const attemptId = data.attemptId; // Save attempt ID for completion
       
       // Iterate through steps with retry logic
       for (let i = 0; i < data.steps.length; i++) {
@@ -104,6 +121,16 @@ export default function Home() {
       localStorage.setItem("releaf_last_license", JSON.stringify(licenseData));
       
       setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
+      
+      // Mark attempt as completed in database
+      try {
+        await fetch(`/api/automation/${attemptId}/complete`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+        });
+      } catch (e) {
+        console.error("Failed to mark attempt as completed:", e);
+      }
     } catch (e) {
       console.error(e);
       setLog((x) => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
