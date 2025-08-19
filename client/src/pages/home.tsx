@@ -25,11 +25,16 @@ export default function Home() {
 
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<{ t: string; msg: string }[]>([]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [totalSteps, setTotalSteps] = useState(0);
   const ts = () => new Date().toLocaleTimeString();
 
   const runAutomation = useCallback(async () => {
     setRunning(true);
     setLog([]);
+    setCurrentStep(0);
+    setTotalSteps(0);
+    
     try {
       setLog((x) => [
         ...x,
@@ -52,16 +57,31 @@ export default function Home() {
         setRunning(false);
         return;
       }
-      for (const step of data.steps) {
+      
+      setTotalSteps(data.steps.length);
+      
+      // Iterate through steps with retry logic
+      for (let i = 0; i < data.steps.length; i++) {
+        const step = data.steps[i];
+        setCurrentStep(i + 1);
         setLog((x) => [...x, { t: ts(), msg: step.label }]);
         await new Promise((r) => setTimeout(r, step.delayMs));
+        
+        // 10% chance of retry after step 3
+        if (i === 2 && Math.random() < 0.1) {
+          setLog((x) => [...x, { t: ts(), msg: "Portal session expired — retrying…" }]);
+          await new Promise((r) => setTimeout(r, 600));
+        }
       }
+      
       setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
     } catch (e) {
       console.error(e);
       setLog((x) => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
     } finally {
       setRunning(false);
+      setCurrentStep(0);
+      setTotalSteps(0);
     }
   }, [stateCode, licenseId, autofill]);
 
@@ -272,12 +292,17 @@ export default function Home() {
 
             {/* Automation Runner */}
             <div className="re-card p-6">
-              <h2
-                className="mb-4 text-lg font-semibold text-charcoal"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Automation
-              </h2>
+              <div className="mb-4 flex items-center justify-between">
+                <h2
+                  className="text-lg font-semibold text-charcoal"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Automation
+                </h2>
+                {totalSteps > 0 && (
+                  <StepperDots count={totalSteps} active={currentStep} />
+                )}
+              </div>
               <Button onClick={runAutomation} disabled={running} fullWidth>
                 {running ? (
                   <>Processing…</>
