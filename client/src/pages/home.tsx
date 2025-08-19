@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Play } from "lucide-react";
 import { AppShell } from "@/ui/AppShell";
 import { StepperDots } from "@/components/StepperDots";
 import { Button } from "@/components/Button";
 import AutomationLog from "@/components/AutomationLog";
+import { WalletCard } from "@/components/WalletCard";
 import { STATES, LICENSES } from "@/constants/catalog";
 import { MOCK_PROFILE } from "@/constants/profile";
 
@@ -27,7 +28,21 @@ export default function Home() {
   const [log, setLog] = useState<{ t: string; msg: string }[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [totalSteps, setTotalSteps] = useState(0);
+  const [issued, setIssued] = useState<{ id: string; stateCode: string; licenseId: string; timestamp: number } | null>(null);
   const ts = () => new Date().toLocaleTimeString();
+  
+  // Load last issued license on mount
+  useEffect(() => {
+    const stored = localStorage.getItem("releaf_last_license");
+    if (stored) {
+      try {
+        const data = JSON.parse(stored);
+        setIssued(data);
+      } catch (e) {
+        console.error("Failed to load last license:", e);
+      }
+    }
+  }, []);
 
   const runAutomation = useCallback(async () => {
     setRunning(true);
@@ -73,6 +88,17 @@ export default function Home() {
           await new Promise((r) => setTimeout(r, 600));
         }
       }
+      
+      // Generate and persist license card
+      const id = `${stateCode}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+      const licenseData = {
+        id,
+        stateCode,
+        licenseId,
+        timestamp: Date.now()
+      };
+      setIssued(licenseData);
+      localStorage.setItem("releaf_last_license", JSON.stringify(licenseData));
       
       setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
     } catch (e) {
@@ -317,6 +343,16 @@ export default function Home() {
                 Simulate license automation for {stateCode}
               </p>
             </div>
+
+            {/* Wallet Card (if issued) */}
+            {issued && (
+              <WalletCard
+                stateCode={issued.stateCode}
+                licenseId={issued.licenseId}
+                id={issued.id}
+                timestamp={issued.timestamp}
+              />
+            )}
 
             {/* Activity Log */}
             <div className="re-card p-6">
