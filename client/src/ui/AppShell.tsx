@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { Pill } from "@/components/Pill";
 
 /**
  * AppShell Component - Main layout wrapper with RELEAF branding
@@ -14,24 +13,16 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-50 bg-transparent">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold text-white tracking-wider" style={{ fontFamily: 'var(--font-ui)' }}>
-                RELEAF
-              </h1>
-            </div>
-            
-            <div className="flex gap-2">
-              <Pill isActive={false}>
-                Investor Mode
-              </Pill>
-              <Pill isActive={false}>
-                Demo
-              </Pill>
-            </div>
-          </div>
+      <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+          <h1
+            className="text-xl font-bold tracking-wider text-forest"
+            style={{ fontFamily: "var(--font-ui)" }}
+          >
+            RELEAF
+          </h1>
+          {/* room for future actions (profile, settings) */}
+          <div className="h-6 w-6" />
         </div>
       </header>
       

@@ -41,6 +41,14 @@ Use `?demo=1` in the URL to autoplay the whole flow for recordings.
 - Removed unused imports in server/routes.ts
 - Created client tsconfig.json for proper path alias resolution
 
+### Home Page Redesign (January 19, 2025)
+- Transformed Home from marketing layout to actual responsive app screen
+- Removed hero wave, brand system examples, and marketing elements
+- Created phone-style permit flow preview on left side
+- Kept automation runner and activity log on right side
+- Made AppShell header compact and app-like (removed investor/demo pills)
+- Maintained full automation functionality with state/license selection
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

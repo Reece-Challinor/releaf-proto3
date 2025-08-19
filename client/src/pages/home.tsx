@@ -1,265 +1,295 @@
-import { useState, useCallback, useMemo } from "react";
-import { Link } from "wouter";
-import { Activity, Play, ArrowRight, Trees, Calendar, FileCheck, User } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import { Play } from "lucide-react";
 import { AppShell } from "@/ui/AppShell";
-import { HeroWave } from "@/ui/HeroWave";
-import { SegmentedControl } from "@/components/SegmentedControl";
-import { Pill } from "@/components/Pill";
+import { StepperDots } from "@/components/StepperDots";
 import { Button } from "@/components/Button";
-import { ChoiceButton } from "@/components/ChoiceButton";
 import AutomationLog from "@/components/AutomationLog";
-import ProfileCard from "@/components/ProfileCard";
 import { STATES, LICENSES } from "@/constants/catalog";
 import { MOCK_PROFILE } from "@/constants/profile";
 
 /**
- * RELEAF Demo Home Page
- * Prototype for investor demos and user testing - NOT production
- * Shows state selection, automation demo, and navigation to other screens
- * No real licensing operations - mock data only
+ * Home = App-like, responsive screen:
+ * - Left: phone-style permit flow preview
+ * - Right: automation runner + log
  */
 export default function Home() {
-  const [stateCode, setStateCode] = useState("TX");
-  const [log, setLog] = useState<{t:string; msg:string}[]>([]);
-  const [running, setRunning] = useState(false);
+  // Core selection for the automation
+  const [stateCode, setStateCode] = useState<"TX" | "CO" | "AR">("TX");
   const [autofill, setAutofill] = useState(true);
-  
-  // License management based on selected state
   const licenseList = useMemo(() => LICENSES[stateCode] || [], [stateCode]);
   const [licenseId, setLicenseId] = useState(licenseList[0]?.id || "TX-HUNT-RES");
 
-  function ts() { 
-    return new Date().toLocaleTimeString(); 
-  }
+  // lightweight "in-app" flow preview state (left phone)
+  const [permitChoice, setPermitChoice] = useState<"hunting" | "fishing">("hunting");
+  const [flowStep, setFlowStep] = useState(1); // 1: Permit types, 2: Info, 3: Checkout
+
+  const [running, setRunning] = useState(false);
+  const [log, setLog] = useState<{ t: string; msg: string }[]>([]);
+  const ts = () => new Date().toLocaleTimeString();
 
   const runAutomation = useCallback(async () => {
     setRunning(true);
     setLog([]);
-    
     try {
-      // Log the current selections
-      setLog([{ 
-        t: ts(), 
-        msg: `Starting automation for ${stateCode} • ${licenseId} • Profile: ${autofill ? 'enabled' : 'disabled'}` 
-      }]);
-      
-      // Call the new automation endpoint
+      setLog((x) => [
+        ...x,
+        { t: ts(), msg: `Starting automation for ${stateCode} • ${licenseId} • Profile: ${autofill ? "enabled" : "disabled"}` },
+      ]);
+
       const res = await fetch("/api/automation", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ 
-          state: stateCode, 
-          license: licenseId, 
-          autofill: autofill,
-          profile: autofill ? MOCK_PROFILE : undefined
-        })
+        body: JSON.stringify({
+          state: stateCode,
+          license: licenseId,
+          autofill,
+          profile: autofill ? MOCK_PROFILE : undefined,
+        }),
       });
-      
       const data = await res.json();
-      
-      if (!data.ok) { 
-        setLog(x => [...x, { t: ts(), msg: "Error starting automation" }]); 
-        setRunning(false); 
-        return; 
+      if (!data.ok) {
+        setLog((x) => [...x, { t: ts(), msg: "Error starting automation" }]);
+        setRunning(false);
+        return;
       }
-
-      // Animate through the steps
       for (const step of data.steps) {
-        setLog(x => [...x, { t: ts(), msg: step.label }]);
-        // simulate time passing
-        await new Promise(r => setTimeout(r, step.delayMs));
+        setLog((x) => [...x, { t: ts(), msg: step.label }]);
+        await new Promise((r) => setTimeout(r, step.delayMs));
       }
-      
-      setLog(x => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
-      setRunning(false);
-    } catch (error) {
-      console.error('Automation failed:', error);
-      setLog(x => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
+      setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
+    } catch (e) {
+      console.error(e);
+      setLog((x) => [...x, { t: ts(), msg: "Error: Failed to connect to automation service" }]);
+    } finally {
       setRunning(false);
     }
   }, [stateCode, licenseId, autofill]);
 
-  const screens = [
-    {
-      path: "/login",
-      title: "Login Flow",
-      subtitle: "SSO and email authentication",
-      icon: <User className="w-full h-full text-olive" />
-    },
-    {
-      path: "/permits",
-      title: "Permit Selection",
-      subtitle: "Environmental permit types",
-      icon: <Trees className="w-full h-full text-forest" />
-    },
-    {
-      path: "/calendar",
-      title: "Calendar Booking",
-      subtitle: "Schedule site visits",
-      icon: <Calendar className="w-full h-full text-sage" />
-    },
-    {
-      path: "#",
-      title: "KYC Checkout",
-      subtitle: "Coming soon",
-      icon: <FileCheck className="w-full h-full text-moss" />
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-sand to-bone">
-      {/* Hero Section */}
-      <div className="relative h-96 bg-gradient-to-br from-forest to-olive overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/20" />
-          <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-black/20" />
-        </div>
-        
-        {/* Content */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-6xl font-bold text-white mb-4 tracking-wider" style={{ fontFamily: 'var(--font-ui)' }}>
-            RELEAF
-          </h1>
-          <p className="text-xl text-white/90 font-light" style={{ fontFamily: 'var(--font-display)' }}>
-            Less red tape. More wild places.
-          </p>
-        </div>
-        
-        <HeroWave />
-      </div>
+      <AppShell>
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
+          {/* LEFT: phone-style flow preview */}
+          <section className="mx-auto w-full max-w-[420px]">
+            <div className="rounded-[28px] border bg-gradient-to-b from-white/70 to-bone p-4 shadow-xl">
+              {/* phone header */}
+              <div className="flex items-center justify-between px-1">
+                <span
+                  className="text-lg font-bold tracking-wider text-forest"
+                  style={{ fontFamily: "var(--font-ui)" }}
+                >
+                  RELEAF
+                </span>
+                <div className="h-6 w-6 rounded-full bg-sage/40" />
+              </div>
 
-      {/* Main Content */}
-      <main className="relative -mt-10 z-20">
-        <div className="max-w-7xl mx-auto px-4 pb-16">
-          {/* Example Screens */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-charcoal mb-6 text-center" style={{ fontFamily: 'var(--font-display)' }}>
-              Brand System Examples
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {screens.map((screen) => (
-                <Link key={screen.path} href={screen.path}>
-                  <ChoiceButton
-                    icon={screen.icon}
-                    subtitle={screen.subtitle}
-                  >
-                    {screen.title}
-                  </ChoiceButton>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* Left Column - Controls */}
-            <div className="space-y-6">
-              {/* Profile Card */}
-              <ProfileCard 
-                profile={MOCK_PROFILE} 
-                enabled={autofill} 
-                onToggle={setAutofill} 
-              />
-
-              {/* State & License Selection */}
-              <div className="re-card p-6">
-                <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
-                  Select State & License
-                </h2>
-                
-                {/* State Selector */}
-                <div className="flex gap-1 mb-4">
-                  {STATES.map(s => (
-                    <button
-                      key={s.code}
-                      onClick={() => {
-                        setStateCode(s.code);
-                        setLicenseId((LICENSES[s.code] || [])[0]?.id || "");
-                      }}
-                      className={`
-                        px-4 py-2 text-sm font-medium rounded-lg transition-colors
-                        ${s.code === stateCode 
-                          ? 'bg-forest text-white' 
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}
-                      `}
+              {/* step content */}
+              <div className="re-card mt-6 p-5">
+                {flowStep === 1 && (
+                  <>
+                    <h2
+                      className="mb-4 text-center text-xl font-semibold text-charcoal"
+                      style={{ fontFamily: "var(--font-display)" }}
                     >
-                      {s.name}
-                    </button>
-                  ))}
-                </div>
-                
-                {/* License Selector */}
-                <select
-                  value={licenseId}
-                  onChange={(e) => setLicenseId(e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
-                >
-                  {licenseList.map(l => (
-                    <option key={l.id} value={l.id}>{l.label}</option>
-                  ))}
-                </select>
-                
-                <p className="mt-3 text-sm text-gray-600">
-                  Selected: {stateCode} • {licenseId}
-                </p>
+                      Select the permits<br />you would like
+                    </h2>
+                    <div className="grid gap-3">
+                      <button
+                        onClick={() => setPermitChoice("fishing")}
+                        className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all ${
+                          permitChoice === "fishing"
+                            ? "border-olive bg-sand text-olive"
+                            : "border-sage/40 text-charcoal hover:border-sage"
+                        }`}
+                      >
+                        <span>Fishing</span>
+                        <span
+                          className={`h-3.5 w-3.5 rounded-full ${
+                            permitChoice === "fishing" ? "bg-olive" : "bg-gray-300"
+                          }`}
+                        />
+                      </button>
+                      <button
+                        onClick={() => setPermitChoice("hunting")}
+                        className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-sm font-medium shadow-sm transition-all ${
+                          permitChoice === "hunting"
+                            ? "border-olive bg-sand text-olive"
+                            : "border-sage/40 text-charcoal hover:border-sage"
+                        }`}
+                      >
+                        <span>Hunting</span>
+                        <span
+                          className={`h-3.5 w-3.5 rounded-full ${
+                            permitChoice === "hunting" ? "bg-olive" : "bg-gray-300"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </>
+                )}
+
+                {flowStep === 2 && (
+                  <>
+                    <h2
+                      className="mb-2 text-left text-xl font-semibold text-charcoal"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      Your information
+                    </h2>
+                    <p className="mb-4 text-sm text-gray-600">
+                      Autofill from verified profile is{" "}
+                      <strong>{autofill ? "ON" : "OFF"}</strong>.
+                    </p>
+                    <div className="grid gap-2 rounded-xl border p-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Name</span>
+                        <span className="font-medium">{MOCK_PROFILE.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">DOB</span>
+                        <span className="font-medium">{MOCK_PROFILE.dob}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Hunter Ed</span>
+                        <span className="font-medium">{MOCK_PROFILE.hunterEdId}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {flowStep === 3 && (
+                  <>
+                    <h2
+                      className="mb-2 text-left text-xl font-semibold text-charcoal"
+                      style={{ fontFamily: "var(--font-display)" }}
+                    >
+                      Checkout
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      {licenseId} • {stateCode}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Secure payment and issuance preview.
+                    </p>
+                  </>
+                )}
               </div>
 
-              {/* Automation Runner */}
-              <div className="re-card p-6">
-                <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
-                  Automation Demo
-                </h2>
+              {/* phone footer progress */}
+              <div className="mt-5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <button
+                    className="rounded-lg px-3 py-2 text-sm text-olive hover:bg-sand"
+                    onClick={() => setFlowStep((s) => Math.max(1, s - 1))}
+                    disabled={flowStep === 1}
+                  >
+                    Back
+                  </button>
+                </div>
+                <StepperDots count={3} active={flowStep} />
                 <Button
-                  onClick={runAutomation}
-                  disabled={running}
-                  fullWidth
+                  variant="outline"
+                  onClick={() => setFlowStep((s) => Math.min(3, s + 1))}
                 >
-                  {running ? (
-                    <>Processing...</>
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      Run Automation
-                    </>
-                  )}
+                  Next
                 </Button>
-                <p className="mt-3 text-sm text-gray-600">
-                  Simulate hunting license automation for {stateCode}
-                </p>
-              </div>
-
-              {/* Status Overview */}
-              <div className="re-card p-6">
-                <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
-                  Compliance Status
-                </h2>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Environmental Impact</span>
-                    <Pill isActive>Compliant</Pill>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Safety Standards</span>
-                    <Pill isActive>Approved</Pill>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Documentation</span>
-                    <Pill>Pending</Pill>
-                  </div>
-                </div>
               </div>
             </div>
+          </section>
 
-            {/* Right Column - Activity Log */}
+          {/* RIGHT: controls + automation + log */}
+          <section className="space-y-6">
+            {/* State & license controls (compact) */}
             <div className="re-card p-6">
-              <h2 className="text-lg font-semibold text-charcoal mb-4" style={{ fontFamily: 'var(--font-display)' }}>
+              <h2
+                className="mb-4 text-lg font-semibold text-charcoal"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Setup
+              </h2>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {STATES.map((s) => (
+                  <button
+                    key={s.code}
+                    onClick={() => {
+                      setStateCode(s.code as typeof stateCode);
+                      setLicenseId((LICENSES[s.code] || [])[0]?.id || "");
+                    }}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                      s.code === stateCode
+                        ? "bg-forest text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="mb-1 block text-sm text-gray-600">License</label>
+                  <select
+                    value={licenseId}
+                    onChange={(e) => setLicenseId(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-forest"
+                  >
+                    {licenseList.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label className="mt-3 inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={autofill}
+                    onChange={(e) => setAutofill(e.target.checked)}
+                  />
+                  Autofill from profile
+                </label>
+              </div>
+              <p className="mt-3 text-sm text-gray-600">
+                Selected: {stateCode} • {licenseId}
+              </p>
+            </div>
+
+            {/* Automation Runner */}
+            <div className="re-card p-6">
+              <h2
+                className="mb-4 text-lg font-semibold text-charcoal"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                Automation
+              </h2>
+              <Button onClick={runAutomation} disabled={running} fullWidth>
+                {running ? (
+                  <>Processing…</>
+                ) : (
+                  <>
+                    <Play className="mr-2 h-4 w-4" />
+                    Run Automation
+                  </>
+                )}
+              </Button>
+              <p className="mt-3 text-sm text-gray-600">
+                Simulate license automation for {stateCode}
+              </p>
+            </div>
+
+            {/* Activity Log */}
+            <div className="re-card p-6">
+              <h2
+                className="mb-4 text-lg font-semibold text-charcoal"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
                 Activity Log
               </h2>
               <AutomationLog items={log} />
             </div>
-          </div>
+          </section>
         </div>
-      </main>
+      </AppShell>
     </div>
   );
 }
