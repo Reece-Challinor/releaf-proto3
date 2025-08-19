@@ -33,7 +33,7 @@ export default function Home() {
     try {
       setLog((x) => [
         ...x,
-        { t: ts(), msg: `Starting automation for ${stateCode} • ${licenseId} • Profile: ${autofill ? "enabled" : "disabled"}` },
+        { t: ts(), msg: `Using profile: ${autofill ? "true" : "false"} • Starting automation for ${stateCode} • ${licenseId}` },
       ]);
 
       const res = await fetch("/api/automation", {
@@ -248,6 +248,22 @@ export default function Home() {
                   />
                   Autofill from profile
                 </label>
+                {autofill && (
+                  <div className="mt-3 rounded-lg bg-sage/10 p-3 text-xs">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-gray-600">Name:</span>
+                      <span className="font-medium">{MOCK_PROFILE.name}</span>
+                    </div>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-gray-600">DOB:</span>
+                      <span className="font-medium">{MOCK_PROFILE.dob}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Hunter Ed:</span>
+                      <span className="font-medium">{MOCK_PROFILE.hunterEdId}</span>
+                    </div>
+                  </div>
+                )}
               </div>
               <p className="mt-3 text-sm text-gray-600">
                 Selected: {stateCode} • {licenseId}

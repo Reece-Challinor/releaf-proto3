@@ -1,0 +1,70 @@
+Stripe Checkout (test mode)
+
+**Goal:** “Proceed to Checkout” posts to API, creates a Stripe Checkout Session (test), and redirects to hosted Stripe.
+
+**Do this:**
+
+1. **Server route:**
+
+   * Install: `npm i stripe`
+   * Env: `STRIPE_SECRET_KEY=sk_test_...`
+   * File: `server/routes/checkout.ts`
+
+     ```ts
+     import { Router } from "express";
+     import Stripe from "stripe";
+     export const checkoutRouter = Router();
+     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { apiVersion: "2024-06-20" });
+
+     checkoutRouter.post("/", async (req, res) => {
+       try {
+         const { state="TX", license="TX-HUNT-RES" } = req.body || {};
+         const origin = (req.headers["x-forwarded-origin"] as string) || `http://localhost:5173`;
+         const session = await stripe.checkout.sessions.create({
+           mode: "payment",
+           line_items: [{
+             price_data: {
+               currency: "usd",
+               product_data: { name: `Demo: ${state} • ${license}` },
+               unit_amount: 2500,
+             },
+             quantity: 1,
+           }],
+           success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+           cancel_url: `${origin}/checkout/cancel`,
+         });
+         res.json({ ok: true, id: session.id, url: session.url });
+       } catch (e:any) {
+         res.status(500).json({ ok:false, error: e.message });
+       }
+     });
+     ```
+   * Register it in `server/routes.ts`:
+
+     ```ts
+     import { checkoutRouter } from "./routes/checkout";
+     app.use("/api/checkout", checkoutRouter);
+     ```
+
+2. **Client redirect:**
+
+   * Install: `npm i @stripe/stripe-js`
+   * Add:
+
+     ```ts
+     import { loadStripe } from "@stripe/stripe-js";
+     const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+     async function goCheckout() {
+       const res = await fetch("/api/checkout", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ state: stateCode, license: licenseId }) });
+       const data = await res.json();
+       if (!data.ok) return alert("Checkout failed");
+       if (data.url) { window.location.href = data.url; return; }
+       const stripe = await stripePromise;
+       await stripe?.redirectToCheckout({ sessionId: data.id });
+     }
+     ```
+   * Add a primary button: **Proceed to Checkout**.
+
+3. **Success/Cancel pages:** add simple pages under `client/src/pages/checkout/{success,cancel}.tsx`.
+
+**Verify:** Button opens Stripe’s test checkout with a \$25 line item.
