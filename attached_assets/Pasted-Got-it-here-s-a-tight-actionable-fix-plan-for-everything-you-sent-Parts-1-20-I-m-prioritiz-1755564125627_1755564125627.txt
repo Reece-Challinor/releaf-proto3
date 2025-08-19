@@ -1,0 +1,244 @@
+Got it — here’s a tight, **actionable fix plan** for everything you sent (Parts 1–20). I’m prioritizing items that would block running/building first, then correctness, then polish.
+
+# ✅ Priority fixes (do these first)
+
+1. **Server TS config doesn’t match your folder layout**
+
+   * Your `server/tsconfig.json` only includes `src/**/*` but your code lives directly under `server/`.
+   * **Fix**:
+
+     ```json
+     {
+       "compilerOptions": {
+         "target": "ES2022",
+         "module": "commonjs",
+         "lib": ["ES2022"],
+         "outDir": "./dist",
+         "rootDir": ".",
+         "strict": true,
+         "esModuleInterop": true,
+         "skipLibCheck": true,
+         "forceConsistentCasingInFileNames": true,
+         "resolveJsonModule": true,
+         "moduleResolution": "node",
+         "allowSyntheticDefaultImports": true,
+         "types": ["node"],
+         "baseUrl": "..",
+         "paths": {
+           "@shared/*": ["shared/*"]
+         }
+       },
+       "include": ["**/*.ts"],
+       "exclude": ["node_modules", "dist"]
+     }
+     ```
+
+2. **`import.meta.dirname` used under CommonJS**
+
+   * In `server/vite.ts` you’re using `import.meta.dirname` but your TS config is CommonJS. Use `__dirname`.
+   * **Patch (`server/vite.ts`)**:
+
+     ```ts
+     // replace all occurrences of import.meta.dirname with __dirname
+     const clientTemplate = path.resolve(__dirname, "..", "client", "index.html");
+     // ...
+     const distPath = path.resolve(__dirname, "public");
+     ```
+
+3. **Path alias in server code**
+
+   * `server/storage.ts` imports `@shared/schema` but no root tsconfig shown. Since we patched `paths` above, you’re good.
+   * **If you’d rather go relative**, change:
+
+     ```ts
+     // server/storage.ts
+     // from:
+     import { type User, type InsertUser } from "@shared/schema";
+     // to:
+     import { type User, type InsertUser } from "../shared/schema";
+     ```
+
+4. **Vite build output must match what the server serves**
+
+   * Production server serves `server/public`. Ensure Vite outputs there.
+   * **`vite.config.ts` (root) minimal setup**:
+
+     ```ts
+     import { defineConfig } from "vite";
+     import react from "@vitejs/plugin-react";
+     import path from "path";
+
+     export default defineConfig({
+       plugins: [react()],
+       root: path.resolve(__dirname, "client"),
+       build: {
+         outDir: path.resolve(__dirname, "server", "public"),
+         emptyOutDir: true,
+       },
+       resolve: {
+         alias: {
+           "@": path.resolve(__dirname, "client", "src"),
+           "@shared": path.resolve(__dirname, "shared"),
+         },
+       },
+       server: {
+         port: 5173,
+       },
+     });
+     ```
+
+5. **Chakra provider wrapper is incorrect**
+
+   * You’re passing a `value` prop that Chakra doesn’t use.
+   * **Fix (`client/src/ui/ChakraProvider.tsx`)**:
+
+     ```tsx
+     import { ChakraProvider as BaseChakraProvider } from "@chakra-ui/react";
+     import { ReactNode } from "react";
+
+     interface ChakraProviderProps {
+       children: ReactNode;
+     }
+
+     export function ChakraProvider({ children }: ChakraProviderProps) {
+       return <BaseChakraProvider>{children}</BaseChakraProvider>;
+     }
+     ```
+   * (Or remove Chakra entirely if you aren’t using it; you’re already on Tailwind + shadcn/ui.)
+
+6. **Menubar component typo prevents display name**
+
+   * `displayname` → `displayName`.
+   * **Fix (`client/src/components/ui/menubar.tsx`)**:
+
+     ```ts
+     // replace
+     MenubarShortcut.displayname = "MenubarShortcut"
+     // with
+     MenubarShortcut.displayName = "MenubarShortcut"
+     ```
+
+7. **Toast hook re-subscribes on every state update**
+
+   * `useEffect` in `client/src/hooks/use-toast.ts` depends on `state`; it should subscribe once.
+   * **Fix**:
+
+     ```ts
+     React.useEffect(() => {
+       listeners.push(setState)
+       return () => {
+         const index = listeners.indexOf(setState)
+         if (index > -1) {
+           listeners.splice(index, 1)
+         }
+       }
+     }, []) // <-- empty deps
+     ```
+
+8. **Ensure all client aliases actually resolve**
+
+   * You’re using `@/...` all over. The `vite.config.ts` alias above covers it. If you also use TS path aliases in the client, add a `client/tsconfig.json`:
+
+     ```json
+     {
+       "compilerOptions": {
+         "target": "ES2022",
+         "lib": ["ES2022", "DOM"],
+         "jsx": "react-jsx",
+         "baseUrl": ".",
+         "paths": {
+           "@/*": ["src/*"],
+           "@shared/*": ["../shared/*"]
+         }
+       },
+       "include": ["src"]
+     }
+     ```
+
+9. **Production static path sanity-check**
+
+   * After `vite build`, confirm `server/public/index.html` exists. Your `serveStatic` already points there after we patched `__dirname`.
+
+10. **Database env safety**
+
+    * `pingDb()` is fine if `DATABASE_URL` exists. To avoid noisy errors in demos, guard the pool:
+
+    ```ts
+    // server/db.ts
+    const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : undefined;
+
+    export async function pingDb(): Promise<boolean> {
+      if (!pool) return false;
+      try {
+        await pool.query("SELECT 1");
+        return true;
+      } catch (err) {
+        console.error("[DB] Connection failed:", err);
+        return false;
+      }
+    }
+
+    export { pool };
+    ```
+
+---
+
+# 🧩 Correctness & UX polish (nice-to-have, still quick)
+
+* **Calendar accessibility**
+  Add `aria-disabled` to disabled day buttons (you already set `disabled`):
+
+  ```tsx
+  disabled={day < 15}
+  aria-disabled={day < 15}
+  ```
+
+* **Carousel nav buttons off-canvas on narrow containers**
+  Consider reducing `-left-12 / -right-12` to `-left-8 / -right-8` or wrap carousel in `relative overflow-visible`.
+
+* **Remove stray `"use client"`** markers\*\*
+  Not harmful in Vite, but they’re a Next.js artifact. You can safely remove them from components in `client/src/components/ui/*`.
+
+* **Server logging truncation**
+  Current truncation is fine; if you want full logs while debugging, remove the 80-char cut.
+
+* **Unused imports**
+  `server/routes.ts` imports `storage` but doesn’t use it; remove to keep things tidy.
+
+---
+
+# 🛠 Suggested scripts (root `package.json`)
+
+Add these to make dev/prod flows smooth:
+
+```json
+{
+  "scripts": {
+    "dev": "node --watch -r ts-node/register server/index.ts", 
+    "client:dev": "vite",
+    "build": "vite build",
+    "serve": "node dist/index.js", 
+    "server:tsc": "tsc -p server/tsconfig.json"
+  }
+}
+```
+
+> If you prefer **TS at runtime** for the server in dev, use `tsx`:
+>
+> ```json
+> "dev": "tsx server/index.ts"
+> ```
+
+---
+
+# 🔎 Quick test checklist
+
+1. `npm i` (ensure deps include: `express`, `vite`, `@vitejs/plugin-react`, `lucide-react`, `cmdk`, `@radix-ui/*`, `embla-carousel-react`, `vaul`, `wouter`, etc.)
+2. `npm run client:dev` → verify the client renders.
+3. `npm run dev` (server) → `GET /api/health` returns `{ ok: true, db: false|true, ... }`.
+4. `npm run build` → verify `server/public/` populated.
+5. `NODE_ENV=production node server/dist/index.js` (or whatever your compiled entry is) → app serves built client on `PORT`.
+
+---
+
+If you want, I can bundle these patches as a single “PR diff” next.
