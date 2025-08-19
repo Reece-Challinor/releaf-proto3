@@ -8,6 +8,7 @@ import AutomationLog from "@/components/AutomationLog";
 import { WalletCard } from "@/components/WalletCard";
 import { STATES, LICENSES } from "@/constants/catalog";
 import { MOCK_PROFILE } from "@/constants/profile";
+import { track } from "@/lib/track";
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
@@ -17,6 +18,9 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 
  * - Right: automation runner + log
  */
 export default function Home() {
+  // Check for demo mode
+  const isDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+  
   // Core selection for the automation
   const [stateCode, setStateCode] = useState<"TX" | "CO" | "AR">("TX");
   const [autofill, setAutofill] = useState(true);
@@ -57,17 +61,25 @@ export default function Home() {
     }
   }, []);
 
-  // Persist state and license selections to localStorage
+  // Persist state and license selections to localStorage and track changes
   useEffect(() => {
     localStorage.setItem("releaf_state_code", stateCode);
     localStorage.setItem("releaf_license_id", licenseId);
-  }, [stateCode, licenseId]);
+    track("state_selected", { state: stateCode });
+  }, [stateCode]);
+
+  useEffect(() => {
+    localStorage.setItem("releaf_license_id", licenseId);
+    track("license_selected", { license: licenseId });
+  }, [licenseId]);
 
   const runAutomation = useCallback(async () => {
     setRunning(true);
     setLog([]);
     setCurrentStep(0);
     setTotalSteps(0);
+    
+    track("automation_started", { state: stateCode, license: licenseId });
     
     try {
       setLog((x) => [
@@ -122,6 +134,8 @@ export default function Home() {
       
       setLog((x) => [...x, { t: ts(), msg: "Completed: License issued and saved to Wallet" }]);
       
+      track("automation_completed");
+      
       // Mark attempt as completed in database
       try {
         await fetch(`/api/automation/${attemptId}/complete`, {
@@ -141,8 +155,91 @@ export default function Home() {
     }
   }, [stateCode, licenseId, autofill]);
 
+  const goCheckout = useCallback(async () => {
+    if (!issued) return;
+    
+    track("checkout_click");
+    
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ 
+          state: issued.stateCode, 
+          license: issued.licenseId 
+        })
+      });
+      const data = await res.json();
+      
+      if (!data.ok) {
+        alert("Checkout failed: " + (data.error || "Unknown error"));
+        return;
+      }
+      
+      // If we have a direct URL, use that
+      if (data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      
+      // Otherwise try Stripe.js redirect
+      const stripe = await stripePromise;
+      if (stripe && data.id) {
+        await stripe.redirectToCheckout({ sessionId: data.id });
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+      alert("Failed to start checkout");
+    }
+  }, [issued]);
+
+  // Demo autoplay functionality
+  useEffect(() => {
+    if (!isDemo) return;
+    
+    // Set defaults for demo mode
+    setStateCode("TX");
+    setLicenseId("TX-HUNT-RES");
+    
+    // Auto-start the automation after a brief delay
+    const timer = setTimeout(() => {
+      runAutomation();
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [isDemo, runAutomation]);
+
+  // Auto-proceed to checkout after automation completes in demo mode
+  useEffect(() => {
+    if (!isDemo || !issued || running) return;
+    
+    const timer = setTimeout(() => {
+      goCheckout();
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, [isDemo, issued, running, goCheckout]);
+
+  const toggleDemo = () => {
+    const url = new URL(window.location.href);
+    if (isDemo) {
+      url.searchParams.delete("demo");
+    } else {
+      url.searchParams.set("demo", "1");
+    }
+    window.location.href = url.toString();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-sand to-bone">
+      {/* Floating demo button */}
+      <button
+        onClick={toggleDemo}
+        className="fixed bottom-4 right-4 z-50 rounded-full bg-olive px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-forest transition-colors"
+      >
+        {isDemo ? "Exit Demo" : "Start Demo"}
+      </button>
+      
       <AppShell>
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-[420px_1fr]">
           {/* LEFT: phone-style flow preview */}
@@ -393,39 +490,7 @@ export default function Home() {
                     Complete Purchase
                   </h2>
                   <Button
-                    onClick={async () => {
-                      try {
-                        const res = await fetch("/api/checkout", {
-                          method: "POST",
-                          headers: { "content-type": "application/json" },
-                          body: JSON.stringify({ 
-                            state: issued.stateCode, 
-                            license: issued.licenseId 
-                          })
-                        });
-                        const data = await res.json();
-                        
-                        if (!data.ok) {
-                          alert("Checkout failed: " + (data.error || "Unknown error"));
-                          return;
-                        }
-                        
-                        // If we have a direct URL, use that
-                        if (data.url) {
-                          window.location.href = data.url;
-                          return;
-                        }
-                        
-                        // Otherwise try Stripe.js redirect
-                        const stripe = await stripePromise;
-                        if (stripe && data.id) {
-                          await stripe.redirectToCheckout({ sessionId: data.id });
-                        }
-                      } catch (error) {
-                        console.error("Checkout error:", error);
-                        alert("Failed to start checkout");
-                      }
-                    }}
+                    onClick={goCheckout}
                     fullWidth
                     className="bg-forest hover:bg-olive"
                   >
