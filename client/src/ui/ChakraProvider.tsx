@@ -6,5 +6,5 @@ interface ChakraProviderProps {
 }
 
 export function ChakraProvider({ children }: ChakraProviderProps) {
-  return <BaseChakraProvider value={{}}>{children}</BaseChakraProvider>;
+  return <BaseChakraProvider>{children}</BaseChakraProvider>;
 }

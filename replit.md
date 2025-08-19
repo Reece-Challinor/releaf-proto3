@@ -32,6 +32,15 @@ Use `?demo=1` in the URL to autoplay the whole flow for recordings.
 - Permits → Calendar → Checkout (coming soon)
 - All pages have proper back navigation to previous screens
 
+### Technical Fixes Applied (January 19, 2025)
+- Fixed server TypeScript configuration to match folder structure
+- Resolved ChakraProvider incorrect prop passing issue
+- Fixed menubar component displayName typo
+- Optimized toast hook to prevent unnecessary re-subscriptions
+- Added database connection safety checks for missing DATABASE_URL
+- Removed unused imports in server/routes.ts
+- Created client tsconfig.json for proper path alias resolution
+
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.

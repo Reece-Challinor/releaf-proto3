@@ -6,9 +6,9 @@
 import { Pool } from 'pg';
 
 // Create connection pool using DATABASE_URL from environment
-const pool = new Pool({
+const pool = process.env.DATABASE_URL ? new Pool({
   connectionString: process.env.DATABASE_URL
-});
+}) : undefined;
 
 /**
  * Test database connectivity
@@ -16,6 +16,7 @@ const pool = new Pool({
  * @returns true if database is connected, false otherwise
  */
 export async function pingDb(): Promise<boolean> {
+  if (!pool) return false;
   try {
     await pool.query('SELECT 1');
     return true;
